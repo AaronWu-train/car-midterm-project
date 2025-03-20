@@ -16,7 +16,7 @@ enum BT_CMD {
 
 BT_CMD ask_BT() {
     BT_CMD message = NOTHING;
-    char cmd;
+    char   cmd;
     if (Serial1.available()) {
 // TODO:
 // 1. get cmd from Serial1(bluetooth serial)

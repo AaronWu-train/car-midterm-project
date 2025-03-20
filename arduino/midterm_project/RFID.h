@@ -6,7 +6,7 @@
 // Modify     [2020/03/27 Erik Kuo]
 /***************************************************************************/
 
-/*===========================don't change anything in this file===========================*/
+/*====================don't change anything in this file====================*/
 
 #include <MFRC522.h>  // 引用程式庫
 #include <SPI.h>
@@ -16,7 +16,7 @@ byte* rfid(byte& idSize) {
     // 確認是否有新卡片
     if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
         byte* id = mfrc522.uid.uidByte;  // 取得卡片的UID
-        idSize = mfrc522.uid.size;       // 取得UID的長度
+        idSize   = mfrc522.uid.size;     // 取得UID的長度
 
 // Serial.print("PICC type: ");      // 顯示卡片類型
 //  根據卡片回應的SAK值（mfrc522.uid.sak）判斷卡片類型
