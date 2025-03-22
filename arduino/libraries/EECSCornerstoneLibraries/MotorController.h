@@ -1,6 +1,8 @@
 #ifndef _MOTOR_CONTROLLER_H_
 #define _MOTOR_CONTROLLER_H_
 
+#include "BasicDataStructures.h"
+
 struct PulseWidthModulationController {
     int m_pin_number, m_current_speed;
     PulseWidthModulationController(void);
@@ -30,6 +32,7 @@ class MotorController {
             int right_first_bridge_pin_number, int right_second_bridge_pin_number
         );
         void setSpeed(int left_motor_speed, int right_motor_speed); // -255 <= left/right motor speed <= 255
+        pair<int, int> currentMotorSpeeds(void);
 };
 
 #endif
