@@ -3,7 +3,7 @@
 
 typedef class DigitalInfraredModule {
     public:
-        int pin_number;
+        int m_pin_number;
         DigitalInfraredModule(void);
         DigitalInfraredModule(int pin_number);
         bool value(void);
@@ -11,22 +11,21 @@ typedef class DigitalInfraredModule {
 
 typedef class AnalogInfraredModule {
     public:
-        int pin_number;
+        int m_pin_number;
         AnalogInfraredModule(void);
         AnalogInfraredModule(int pin_number);
         int value(void);
 } AnalogIF;
 
-class TrailTrackingFiveDigitalInfraredArray {
+class DigitalInfraredArray {
     public:
-        TrailTrackingFiveDigitalInfraredArray(void);
-        TrailTrackingFiveDigitalInfraredArray(int infrared_module_pins[5]);
-        struct DetectionResult { int result_type, direction; };
-        DetectionResult detect(void);
+        DigitalInfraredArray(void);
+        DigitalInfraredArray(int infrared_module_amount);
+        DigitalInfraredArray(int infrared_module_amount, int *infrared_module_pins);
+        int detect(void); // (infared_module_amount) bit integer, every bit represents the detection result of a IR module
     private:
-        DigitalInfraredModule infrared_modules[5];
-        int history_infrared_values[20];
-        
+        int m_infrared_module_amount;
+        DigitalInfraredModule *m_infrared_modules;
 };
 
 #endif
