@@ -18,4 +18,6 @@ int M  = A10;
 int R2 = A11;
 int R3 = A12;
 
+constexpr double SPEED_PROPORTION = 1 / 1.07; // right speed * proportion == left speed
+
 #endif

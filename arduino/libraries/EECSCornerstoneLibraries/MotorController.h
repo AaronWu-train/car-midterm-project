@@ -5,7 +5,6 @@ struct PulseWidthModulationController {
     int m_pin_number, m_current_speed;
     PulseWidthModulationController(void);
     PulseWidthModulationController(int pin_number);
-    void init(int pin_number);
     void output(int value); // 0 <= value <= 255
     int currentSpeed(void); // used to check if current speed is same as previous in order not to repeatedly output the same value
 };
@@ -15,7 +14,6 @@ struct BridgeCircuitDirectionController {
     bool m_current_direction;
     BridgeCircuitDirectionController(void);
     BridgeCircuitDirectionController(int first_pin_number, int second_pin_number);
-    void init(int first_pin_number, int second_pin_number);
     void output(bool direction); // 0 for forward, 1 for backward
     bool currentDirection(void); // used to check if current direction is same as previous in order not to repeatedly output the same value
 };

@@ -5,7 +5,6 @@ struct DigitalInfraredModule {
     int m_pin_number;
     DigitalInfraredModule(void);
     DigitalInfraredModule(int pin_number);
-    void init(int pin_number);
     bool detect(void);
 };
 
@@ -13,7 +12,6 @@ struct AnalogInfraredModule {
     int m_pin_number;
     AnalogInfraredModule(void);
     AnalogInfraredModule(int pin_number);
-    void init(int pin_number);
     int detect(void);
 };
 
