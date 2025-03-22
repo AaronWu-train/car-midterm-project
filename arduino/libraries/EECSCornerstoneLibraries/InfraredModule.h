@@ -28,4 +28,15 @@ class DigitalInfraredArray {
         DigitalInfraredModule *m_infrared_modules;
 };
 
+class AnalogInfraredArray {
+    public:
+        AnalogInfraredArray(void);
+        AnalogInfraredArray(int infrared_module_amount);
+        AnalogInfraredArray(int infrared_module_amount, int *infrared_module_pins);
+        int* detect(void); // integer array of size infared_module_amount, every number represents the detection result of a IR module
+    private:
+        int m_infrared_module_amount;
+        AnalogInfraredArray *m_infrared_modules;
+};
+
 #endif
