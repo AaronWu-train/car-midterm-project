@@ -75,13 +75,10 @@ void setup() {
 /*=====Import header files=====*/
 
 /*===========================initialize variables==========================*/
-int l2 = 0, l1 = 0, m0 = 0, r1 = 0,
-    r2     = 0;      // 紅外線模組的讀值(0->white,1->black)
-int  _Tp   = 90;     // set your own value for motor power
-bool state = false;  // set state to false to halt the car, set state to true to
-                     // activate the car
-BT_CMD _cmd =
-    NOTHING;  // enum for bluetooth message, reference in bluetooth.h line 2
+int l2 = 0, l1 = 0, m0 = 0, r1 = 0, r2 = 0;      // 紅外線模組的讀值(0->white,1->black)
+int _Tp = 90;          // set your own value for motor power
+bool state = false;    // set state to false to halt the car, set state to true to activate the car
+BT_CMD _cmd = NOTHING; // enum for bluetooth message, reference in bluetooth.h line 2
 /*===========================initialize variables==========================*/
 
 /*=======================declare function prototypes=======================*/

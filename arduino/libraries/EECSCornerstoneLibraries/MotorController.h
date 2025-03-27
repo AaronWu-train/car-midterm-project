@@ -1,29 +1,11 @@
 #ifndef _MOTOR_CONTROLLER_H_
 #define _MOTOR_CONTROLLER_H_
 
-#include "BasicDataStructures.h"
-
-struct PulseWidthModulationController {
-    int m_pin_number, m_current_speed;
-    PulseWidthModulationController(void);
-    PulseWidthModulationController(int pin_number);
-    void output(int value); // 0 <= value <= 255
-    int currentSpeed(void); // used to check if current speed is same as previous in order not to repeatedly output the same value
-};
-
-struct BridgeCircuitDirectionController {
-    int m_first_pin_number, m_second_pin_number;
-    bool m_current_direction;
-    BridgeCircuitDirectionController(void);
-    BridgeCircuitDirectionController(int first_pin_number, int second_pin_number);
-    void output(bool direction); // 0 for forward, 1 for backward
-    bool currentDirection(void); // used to check if current direction is same as previous in order not to repeatedly output the same value
-};
+#include <ArduinoSTL.h>
+#include <utility>
 
 class MotorController {
     private:
-        PulseWidthModulationController m_left_pwm_controller, m_right_pwm_controller;
-        BridgeCircuitDirectionController m_left_bridge_controller, m_right_bridge_controller;
     public:
         MotorController();
         MotorController(

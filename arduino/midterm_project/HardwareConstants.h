@@ -7,6 +7,4 @@
 #define A11 65
 #define A12 66
 
-constexpr double SPEED_PROPORTION = 1 / 1.07; // right speed * proportion == left speed
-
-#endif
+#endif // _HARDWARE_CONSTANTS_H_
