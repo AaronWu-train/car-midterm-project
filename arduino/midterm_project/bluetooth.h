@@ -1,9 +1,9 @@
 /***************************************************************************/
-// File			  [bluetooth.h]
-// Author		  [Erik Kuo]
-// Synopsis		[Code for bluetooth communication]
-// Functions  [ask_BT, send_msg, send_byte]
-// Modify		  [2020/03/27 Erik Kuo]
+// File			[bluetooth.h]
+// Author		[Erik Kuo]
+// Synopsis	    [Code for bluetooth communication]
+// Functions    [ask_BT, send_msg, send_byte]
+// Modify		[2020/03/27 Erik Kuo]
 /***************************************************************************/
 
 /*if you have no idea how to start*/

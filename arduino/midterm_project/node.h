@@ -1,9 +1,9 @@
 /***************************************************************************/
-// File			  [node.h]
-// Author		  [Erik Kuo, Joshua Lin]
+// File			[node.h]
+// Author		[Erik Kuo, Joshua Lin]
 // Synopsis		[Code for managing car movement when encounter a node]
-// Functions  [/* add on your own! */]
-// Modify		  [2020/03/027 Erik Kuo]
+// Functions    [/* add on your own! */]
+// Modify		[2020/03/027 Erik Kuo]
 /***************************************************************************/
 
 /*===========================import variable===========================*/

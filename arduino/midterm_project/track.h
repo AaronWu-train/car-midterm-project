@@ -1,8 +1,8 @@
 /***************************************************************************/
 // File			  [track.h]
 // Author		  [Erik Kuo]
-// Synopsis		[Code used for tracking]
-// Functions  [MotorWriting, MotorInverter, tracking]
+// Synopsis		  [Code used for tracking]
+// Functions      [MotorWriting, MotorInverter, tracking]
 // Modify		  [2020/03/27 Erik Kuo]
 /***************************************************************************/
 
