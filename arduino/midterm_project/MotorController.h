@@ -1,19 +1,18 @@
 #ifndef _MOTOR_CONTROLLER_H_
 #define _MOTOR_CONTROLLER_H_
 
-class MotorController {
-    public: 
-        // supposed speed = -255 ~ 255 (negative for backward, not equal to motor RPM)
-        double left_motor_speed = 0;
-        double right_motor_speed = 0;
+struct MotorController {
+    // supposed speed = -255 ~ 255 (negative for backward, not equal to motor RPM)
+    double left_motor_speed = 0;
+    double right_motor_speed = 0;
 
-        // actual motor speed = motor_speed * motor_bias
-        double left_motor_bias = 1.0/1.07;
-        double right_motor_bias = 1.0;
+    // actual motor speed = motor_speed * motor_bias
+    double left_motor_bias = 1.0 / 1.07;
+    double right_motor_bias = 1.0;
 
-        // PIN number for motor control
-        int PWMA = 11, AIN2 = 2, AIN1 = 3;  // right motor
-        int PWMB = 12, BIN1 = 5, BIN2 = 6;  // left motor
+    // PIN number for motor control
+    int PWMA = 11, AIN2 = 2, AIN1 = 3;  // right motor
+    int PWMB = 12, BIN1 = 5, BIN2 = 6;  // left motor
 
         MotorController(
             int left_pwm_pin_number, int right_pwm_pin_number,
