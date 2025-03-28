@@ -1,3 +1,5 @@
+#include <MFRC522.h>
+#include <SPI.h>
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd(0x27, 16, 2);  //SCL->A5, SDA->A4, VCC->5V
 char line1[16] = "counter:        ";
@@ -6,6 +8,7 @@ char line2[16] = "                ";
 const int PWMA = 9, AIN1 = 11, AIN2 = 8; // Right motor
 const int PWMB = 10, BIN1 = 12, BIN2 = 13; // Left motor
 const int LEFT2 = A8, LEFT1 = A9, MIDDLE = A10, RIGHT1 = A11, RIGHT2 = A12; // IR modules
+const int RST_PIN = 7, SS_PIN = 53; // RFID
 
 struct DigitalIR {
     int pin;
@@ -44,7 +47,7 @@ struct Motor {
     }
 };
 
-enum State { NONE = -1, STOP = 0, FORWARD = 1, TURN_RIGHT = 2 }; 
+enum State { NONE = -1, STOP = 0, FORWARD = 1, TURN_RIGHT = 2, TURN_LEFT = 3 }; 
 struct StateSequenceNode {
     State state;
     StateSequenceNode *next_state;
@@ -68,7 +71,6 @@ struct ForwardState : StateSequenceNode {
         state = FORWARD;
     }
     bool checkStateEnd(int ir_result[5], int left_speed, int right_speed) {
-        Serial.println(counter);
         int sum = 0;
         for (int i = 0; i < 5; ++i) sum += ir_result[i];
         if (sum >= 4) {
@@ -96,6 +98,119 @@ struct TurnRightState : StateSequenceNode {
         return false;
     }
 };
+struct TurnLeftState : StateSequenceNode {
+    int line_count, counter = 0;
+    int now_on = 0; // 0 for empty, 1 for line
+    TurnLeftState(int line_count, int now_on) : line_count(line_count), counter(0), now_on(now_on) {
+        state = TURN_LEFT;
+    }
+    bool checkStateEnd(int ir_result[5], int left_speed, int right_speed) {
+        if ((ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && !ir_result[0]) {
+            if (now_on == 0) {
+                now_on = 1, ++counter;
+                if (counter == line_count) return true;    
+            }
+        } else now_on = 0; 
+        return false;
+    }
+};
+
+struct RFIDSensor {
+private:
+    MFRC522* mfrc522;
+public:
+    struct DetectionResult {
+        bool detected;
+        int uid_size;
+        byte* uid;
+    };
+    RFIDSensor() {}
+    void init(int ss_pin, int rst_pin) {
+        SPI.begin();
+        mfrc522 = new MFRC522(ss_pin, rst_pin);
+        mfrc522->PCD_Init();
+        Serial.println("Read UID on a MIFARE PICC:");
+    }
+    DetectionResult detect() {
+        if(!mfrc522->PICC_IsNewCardPresent()) return {false};
+        if(!mfrc522->PICC_ReadCardSerial()) return {false};
+        Serial.println(F("**Card Detected:**"));
+        DetectionResult result = {true};
+        result.uid = mfrc522->uid.uidByte;
+        result.uid_size = mfrc522->uid.size;
+        mfrc522->PICC_HaltA();
+        mfrc522->PCD_StopCrypto1();
+        return result;
+    }
+};
+
+// current hardware is using Serial1 as its communication port
+class BluetoothTransmitter {
+private:
+    char command_str[100];
+    int command_len;
+public:
+    struct ReceivedCommand {
+        bool received;
+        StateSequenceNode* command;
+    };
+    BluetoothTransmitter() {
+        Serial1.begin(9600);
+    }
+    void sendCardUID(int uid_size, byte* uid) {
+        Serial1.write('U');
+        for (int i = 0; i < uid_size; ++i) {
+            Serial.println((int)uid[i]);
+            Serial1.write((int)uid[i]);
+        }
+    }
+    void sendIdle() {
+        Serial1.write('I');
+    }
+    ReceivedCommand receiveCommand() {
+        if (!Serial1.available()) return {false, nullptr};
+        // command format: one byte as one command
+        // first four bit: FRLS, mutual exclusive, 1111 represent command stream ended
+        // e.g. 1000 -> forward, 0010 turn right
+        // last four bit: BCD count
+        // e.g. 1000 0110 -> forward for 6 node
+        // e.g. 0100 0010 -> turn right for two lines
+        // every command stream should be ended with command stream ended
+        byte cmd_byte;
+        StateSequenceNode *first = nullptr, *last = nullptr, *temp;
+        while (true) {
+            cmd_byte = Serial1.read();
+            if (cmd_byte >= 0b11110000) {
+                temp = new StateSequenceNode();
+                last->next_state = temp;
+                last = temp;
+                break;
+            }
+            else if (cmd_byte & 0b10000000) {
+                if (first == nullptr) first = last = new ForwardState(cmd_byte & 0b00001111, 0);
+                temp = new ForwardState(cmd_byte & 0b00001111, 0);
+                last->next_state = temp;
+                last = temp;
+            } else if (cmd_byte & 0b01000000) {
+                if (first == nullptr) first = last = new TurnRightState(cmd_byte & 0b00001111, 0);
+                temp = new TurnRightState(cmd_byte & 0b00001111, 0);
+                last->next_state = temp;
+                last = temp;
+            } else if (cmd_byte & 0b00100000) {
+                if (first == nullptr) first = last = new TurnLeftState(cmd_byte & 0b00001111, 0);
+                temp = new TurnLeftState(cmd_byte & 0b00001111, 0);
+                last->next_state = temp;
+                last = temp;
+            } else if (cmd_byte & 0b00010000) {
+                if (first == nullptr) first = last = new StopState();
+                temp = new StopState();
+                last->next_state = temp;
+                last = temp;
+            }
+        }
+        return {true, first};
+    }
+};
 
 class TreasureFindingCar {
 private:
@@ -105,9 +220,11 @@ private:
     double motor_speed_bias = 1 / 1.07;
     double proportion_const = 0.03;
     StateSequenceNode *now_state;
+    RFIDSensor rfid_sensor;
+    BluetoothTransmitter bluetooth_transmitter;
 public:
     int ir_result[5];
-    TreasureFindingCar() {
+    void init() {
         // IR module setting up
         digital_ir[0] = DigitalIR(LEFT2);
         digital_ir[1] = DigitalIR(LEFT1);
@@ -118,8 +235,10 @@ public:
         right_motor = Motor(PWMA, AIN1, AIN2);
         left_motor = Motor(PWMB, BIN1, BIN2);
         // state
-        now_state = new StopState();
+        now_state = new StateSequenceNode();
         now_state->next_state = nullptr;
+        // RFID
+        rfid_sensor.init(SS_PIN, RST_PIN);
     }
     void setStateSequence(StateSequenceNode* state_sequence) {
         while (now_state != nullptr) {
@@ -130,6 +249,20 @@ public:
         now_state = state_sequence;
     }
     void update() {
+        // bluetooth
+        if (now_state->state == NONE) {
+            bluetooth_transmitter.sendIdle();
+            BluetoothTransmitter::ReceivedCommand cmd = bluetooth_transmitter.receiveCommand();
+            if (cmd.received) {
+                now_state = cmd.command;
+            }
+        }
+        // rfid
+        RFIDSensor::DetectionResult rfid_res = rfid_sensor.detect();
+        if (rfid_res.detected) {
+            bluetooth_transmitter.sendCardUID(rfid_res.uid_size, rfid_res.uid);
+        }
+        // ir
         detect();
         // state transitions
         if (now_state->checkStateEnd(ir_result, left_motor.now_speed, right_motor.now_speed)) {
@@ -144,8 +277,6 @@ public:
         } else if (now_state->state == STOP) {
             stop();
         }
-        lcd.setCursor(0, 0);
-        lcd.print(line1);
     }
     void detect() {
         for (int i = 0; i < 5; ++i) ir_result[i] = digital_ir[i].read();
@@ -170,30 +301,14 @@ public:
 
 TreasureFindingCar car;
 
+RFIDSensor rfid;
 void setup() {
     Serial.begin(9600);
-    StateSequenceNode* begin = new ForwardState(2, 0);
-    begin->next_state = new StopState();
-    begin->next_state->next_state = new TurnRightState(1, 0);
-    begin->next_state->next_state->next_state = new StopState();
-    begin->next_state->next_state->next_state->next_state = new ForwardState(1, 0);
-    begin->next_state->next_state->next_state->next_state->next_state = new StopState();
-    car.setStateSequence(begin);
     lcd.init();
     lcd.backlight();
+    car.init();
 }
 
 void loop() {
     car.update();
-    // if (state) return;
-    // for (int speed = 0; speed <= 200; speed += 40) {
-    //     car.forward(speed);
-    //     delay(30);
-    // }
-    // delay(1000);
-    // for (int speed = 200; speed >= 0; speed -= 40) {
-    //     car.forward(speed);
-    //     delay(30);
-    // }
-    // state++;
 }
