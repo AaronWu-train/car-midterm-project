@@ -134,10 +134,10 @@ int getDir(int from, int to, int currOrient){
     }
     else
     {
-        orient = ((orient-currOrient)+4)%4;
-        if (orient==0) cout << 'f';
-        else if (orient==1) cout << 'r';
-        else if (orient==2) cout << 'b';
+        int relative = ((orient-currOrient)+4)%4;
+        if (relative==0) cout << 'f';
+        else if (relative==1) cout << 'r';
+        else if (relative==2) cout << 'b';
         else cout << 'l';
         return orient;
     }
