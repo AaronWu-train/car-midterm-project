@@ -3,7 +3,7 @@
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd(0x27, 16, 2);  //SCL->A5, SDA->A4, VCC->5V
 char line1[16] = "counter:        ";
-char line2[16] = "                ";
+char line2[16] = "now on:         ";
 
 const int PWMA = 9, AIN1 = 11, AIN2 = 8; // Right motor
 const int PWMB = 10, BIN1 = 12, BIN2 = 13; // Left motor
@@ -65,7 +65,7 @@ struct StopState : StateSequenceNode {
     }
 };
 struct ForwardState : StateSequenceNode {
-    int node_count, counter = 0;
+    int node_count, counter;
     int now_on = 0; // 0 for line, 1 for node
     ForwardState(int node_count, int now_on) : node_count(node_count), counter(0), now_on(now_on) {
         state = FORWARD;
@@ -73,10 +73,20 @@ struct ForwardState : StateSequenceNode {
     bool checkStateEnd(int ir_result[5], int left_speed, int right_speed) {
         int sum = 0;
         for (int i = 0; i < 5; ++i) sum += ir_result[i];
+        // line1[8] = counter + '0';
+        // lcd.setCursor(0, 0);
+        // lcd.print(line1);
+        // Serial.print(counter);
+        // Serial.println(node_count);
+        // line2[7] = now_on + '0';
+        // lcd.setCursor(0, 1);
+        // lcd.print(line2);
         if (sum >= 4) {
             if (now_on == 0) {
+                // Serial.println(counter);
                 now_on = 1, ++counter;
-                if (counter == node_count) return true;    
+                // Serial.println(counter);
+                if (counter >= node_count) return true;    
             }
         } else now_on = 0; 
         return false;
@@ -92,7 +102,7 @@ struct TurnRightState : StateSequenceNode {
         if ((ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && !ir_result[0]) {
             if (now_on == 0) {
                 now_on = 1, ++counter;
-                if (counter == line_count) return true;    
+                if (counter >= line_count) return true;    
             }
         } else now_on = 0; 
         return false;
@@ -108,7 +118,7 @@ struct TurnLeftState : StateSequenceNode {
         if ((ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && !ir_result[0]) {
             if (now_on == 0) {
                 now_on = 1, ++counter;
-                if (counter == line_count) return true;    
+                if (counter >= line_count) return true;    
             }
         } else now_on = 0; 
         return false;
@@ -180,32 +190,52 @@ public:
         StateSequenceNode *first = nullptr, *last = nullptr, *temp;
         while (true) {
             cmd_byte = Serial1.read();
-            if (cmd_byte >= 0b11110000) {
+            Serial.println(cmd_byte);
+            if (cmd_byte == 0b11110000) {
+                Serial.println("command stream terminate.");
                 temp = new StateSequenceNode();
                 last->next_state = temp;
                 last = temp;
                 break;
             }
-            else if (cmd_byte & 0b10000000) {
+            else if (cmd_byte & 0b10000000 && !(cmd_byte & 0b01110000)) {
+                Serial.print("forward for ");
+                Serial.print(cmd_byte & 0b00001111);
+                Serial.println(" steps.");
                 if (first == nullptr) first = last = new ForwardState(cmd_byte & 0b00001111, 0);
-                temp = new ForwardState(cmd_byte & 0b00001111, 0);
-                last->next_state = temp;
-                last = temp;
-            } else if (cmd_byte & 0b01000000) {
+                else {
+                    temp = new ForwardState(cmd_byte & 0b00001111, 0);
+                    last->next_state = temp;
+                    last = temp;
+                }
+            } else if (cmd_byte & 0b01000000 && !(cmd_byte & 0b10110000)) {
+                Serial.print("right for ");
+                Serial.print(cmd_byte & 0b00001111);
+                Serial.println(" 90 degrees.");
                 if (first == nullptr) first = last = new TurnRightState(cmd_byte & 0b00001111, 0);
-                temp = new TurnRightState(cmd_byte & 0b00001111, 0);
-                last->next_state = temp;
-                last = temp;
-            } else if (cmd_byte & 0b00100000) {
+                else {
+                    temp = new TurnRightState(cmd_byte & 0b00001111, 0);
+                    last->next_state = temp;
+                    last = temp;
+                }
+            } else if (cmd_byte & 0b00100000 && !(cmd_byte & 0b11010000)) {
+                Serial.print("left for ");
+                Serial.print(cmd_byte & 0b00001111);
+                Serial.println(" 90 degrees.");
                 if (first == nullptr) first = last = new TurnLeftState(cmd_byte & 0b00001111, 0);
-                temp = new TurnLeftState(cmd_byte & 0b00001111, 0);
-                last->next_state = temp;
-                last = temp;
-            } else if (cmd_byte & 0b00010000) {
+                else {
+                    temp = new TurnLeftState(cmd_byte & 0b00001111, 0);
+                    last->next_state = temp;
+                    last = temp;
+                }
+            } else if (cmd_byte & 0b00010000 && !(cmd_byte & 0b11100000)) {
+                Serial.print("wait until two wheels are stopped");
                 if (first == nullptr) first = last = new StopState();
-                temp = new StopState();
-                last->next_state = temp;
-                last = temp;
+                else {
+                    temp = new StopState();
+                    last->next_state = temp;
+                    last = temp;
+                }
             }
         }
         return {true, first};
@@ -222,6 +252,7 @@ private:
     StateSequenceNode *now_state;
     RFIDSensor rfid_sensor;
     BluetoothTransmitter bluetooth_transmitter;
+    bool idle_signal_sent;
 public:
     int ir_result[5];
     void init() {
@@ -239,6 +270,7 @@ public:
         now_state->next_state = nullptr;
         // RFID
         rfid_sensor.init(SS_PIN, RST_PIN);
+        idle_signal_sent = false;
     }
     void setStateSequence(StateSequenceNode* state_sequence) {
         while (now_state != nullptr) {
@@ -251,10 +283,14 @@ public:
     void update() {
         // bluetooth
         if (now_state->state == NONE) {
-            bluetooth_transmitter.sendIdle();
+            if (!idle_signal_sent) {
+                bluetooth_transmitter.sendIdle();
+                idle_signal_sent = true;
+            }
             BluetoothTransmitter::ReceivedCommand cmd = bluetooth_transmitter.receiveCommand();
             if (cmd.received) {
                 now_state = cmd.command;
+                idle_signal_sent = false;
             }
         }
         // rfid
@@ -273,7 +309,7 @@ public:
         if (now_state->state == FORWARD) {
             forward(200);
         } else if (now_state->state == TURN_RIGHT) {
-            turnRight(50);
+            turnRight(80);
         } else if (now_state->state == STOP) {
             stop();
         }
@@ -311,4 +347,5 @@ void setup() {
 
 void loop() {
     car.update();
+    // delay(5);
 }

@@ -33,10 +33,9 @@ class bluetooth:
         """Close the connection."""
         self.ser.close()
 
-    def write(self, output: str):
+    def write(self, output):
         # Write the byte to the output buffer, encoded by utf-8.
-        send = output.encode("utf-8")
-        self.ser.write(send)
+        self.ser.write(output)
 
     def readStat(self) -> str:
         # Scan the input buffer until meet a '\n'. return none if doesn't exist.
@@ -66,8 +65,8 @@ def write():
 
         if msgWrite == "exit":
             sys.exit()
-
-        bt.write(msgWrite + "\n")
+        
+        bt.write(bytes(list(map(int, msgWrite.split()))))
 
 
 if __name__ == "__main__":
@@ -81,8 +80,14 @@ if __name__ == "__main__":
     readThread.daemon = True
     readThread.start()
 
-    while True:
-        msgWrite = input()
-        if msgWrite == "exit":
-            sys.exit()
-        bt.write(msgWrite)
+    write()
+
+
+# 240~255: transmission ended
+# 128 + s: forward for s step (0 <= s <= 15)
+# 64 + t: turn right for t * 90 degrees (0 <= t <= 15)
+# 32 + t: turn left for t * 90 degrees (0 <= t <= 15)
+# 16 ~ 31: wait until two wheels are stopped
+
+# 130 16 65 129 240
+# 65 240
