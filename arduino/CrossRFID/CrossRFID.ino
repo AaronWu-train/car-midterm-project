@@ -310,6 +310,8 @@ public:
             forward(200);
         } else if (now_state->state == TURN_RIGHT) {
             turnRight(80);
+        } else if (now_state->state == TURN_LEFT) {
+            turnRight(-80);
         } else if (now_state->state == STOP) {
             stop();
         }
