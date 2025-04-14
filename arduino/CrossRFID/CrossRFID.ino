@@ -105,7 +105,7 @@ struct TurnRightState : StateSequenceNode {
         state = TURN_RIGHT;
     }
     bool checkStateEnd(int ir_result[5], int left_speed, int right_speed) {
-        if ((!ir_result[3] && !ir_result[4]) && (ir_result[0] || ir_result[1] || ir_result[2])) { // ((ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && !ir_result[0]) {
+        if ((ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && !ir_result[0]) { //((!ir_result[3] && !ir_result[4]) && (ir_result[0] || ir_result[1] || ir_result[2])) { // 
             if (now_on == 0) {
                 now_on = 1, ++counter;
                 if (counter >= line_count) return true;    
@@ -121,7 +121,7 @@ struct TurnLeftState : StateSequenceNode {
         state = TURN_LEFT;
     }
     bool checkStateEnd(int ir_result[5], int left_speed, int right_speed) {
-        if ((ir_result[2] || ir_result[3] || ir_result[4]) && (!ir_result[0] && !ir_result[1])) { // ((ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && !ir_result[0]) {
+        if ((ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && !ir_result[0]) { //((ir_result[2] || ir_result[3] || ir_result[4]) && (!ir_result[0] && !ir_result[1])) { // 
             if (now_on == 0) {
                 now_on = 1, ++counter;
                 if (counter >= line_count) return true;    
@@ -345,7 +345,7 @@ public:
         } else if (now_state->state == TURN_RIGHT) {
             turnRight(50);
         } else if (now_state->state == TURN_LEFT) {
-            turnRight(-50);
+            turnLeft(50);
         } else if (now_state->state == STOP) {
             stop();
         }
@@ -363,10 +363,13 @@ public:
     }
     void turnRight(int speed) {
         left_motor.setSpeed(speed);
-        right_motor.setSpeed(-speed * motor_speed_bias);
+        right_motor.setSpeed(0.3 * speed * motor_speed_bias);
     }
-    void stop() {
-        i
+    void turnLeft(int speed) {
+        left_motor.setSpeed(0.3 * speed);
+        right_motor.setSpeed(speed * motor_speed_bias);
+    }
+    void stop() {   
         left_motor.setSpeed(0);
         right_motor.setSpeed(0);
     }
