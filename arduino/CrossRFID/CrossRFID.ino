@@ -5,10 +5,10 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);  //SCL->A5, SDA->A4, VCC->5V
 char line1[16] = "counter:        ";
 char line2[16] = "now on:         ";
 
-const int PWMA = 9, AIN1 = 11, AIN2 = 8; // Right motor
+const int PWMA =7, AIN1 = 11, AIN2 = 8; // Right motor
 const int PWMB = 10, BIN1 = 12, BIN2 = 13; // Left motor
 const int LEFT2 = A8, LEFT1 = A9, MIDDLE = A10, RIGHT1 = A11, RIGHT2 = A12; // IR modules
-const int RST_PIN = 9, SS_PIN = 53; // RFID
+const int RST_PIN = 6, SS_PIN = 53; // RFID
 
 struct DigitalIR {
     int pin;
@@ -77,7 +77,6 @@ struct ForwardState : StateSequenceNode {
             if (now_on == 0) {
                 now_on = 1, counter++;
                 if (counter >= node_count) {
-                    delay(380);
                     // Serial.println(counter);
                     return true;    
                 }
@@ -166,9 +165,6 @@ public:
                 // 呼叫 Halt 與 StopCrypto1 結束本次讀取狀態
                 mfrc522->PICC_HaltA();
                 mfrc522->PCD_StopCrypto1();
-
-                // 延時幾十毫秒，給模組足夠的時間重置為待命狀態
-                delay(50);
 
                 return result;
             }
@@ -301,8 +297,8 @@ public:
         digital_ir[3] = DigitalIR(RIGHT1);
         digital_ir[4] = DigitalIR(RIGHT2);
         // motor setting up
-        left_motor = Motor(PWMB, BIN1, BIN2, 20);
-        right_motor = Motor(PWMA, AIN1, AIN2, 20 * motor_speed_bias);
+        left_motor = Motor(PWMB, BIN1, BIN2, 40);
+        right_motor = Motor(PWMA, AIN1, AIN2, 40 * motor_speed_bias);
         // state
         now_state = new StateSequenceNode();
         now_state->next_state = nullptr;
@@ -370,6 +366,7 @@ public:
         right_motor.setSpeed(-speed * motor_speed_bias);
     }
     void stop() {
+        i
         left_motor.setSpeed(0);
         right_motor.setSpeed(0);
     }

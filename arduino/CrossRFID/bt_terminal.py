@@ -4,13 +4,15 @@ import sys
 import serial
 
 
-class bluetooth:
+
+class BluetoothRemoteController:
     def __init__(self, port: str, baudrate: int = 9600):
         """Initialize an BT object, and auto-connect it."""
         # The port name is the name shown in control panel
         # And the baudrate is the communication setting, default value of HC-05 is 9600.
         self.ser = serial.Serial(port, baudrate=baudrate)
         self.need_cmd = True
+        self.cmd_stream = []
 
     def is_open(self) -> bool:
         return self.ser.is_open
@@ -38,25 +40,25 @@ class bluetooth:
         self.ser.write(output)
 
     def readStat(self) -> str:
-        # Scan the input buffer until meet a '\n'. return none if doesn't exist.
-        stat = self.ser.read()
-        print(stat)
-        if stat == b'U':
-            byte_count = 0
-            uid = []
-            while byte_count < 4:
-                if (self.waiting):
-                    uid.append(int.from_bytes(self.ser.read(), byteorder="big", signed=False))
-                    byte_count += 1
-            print(uid)
-        elif stat == b'I':
-            self.need_cmd = True
+        if bt.waiting():
+            # Scan the input buffer until meet a '\n'. return none if doesn't exist.
+            stat = self.ser.read()
+            print(stat)
+            if stat == b'U':
+                byte_count = 0
+                uid = []
+                while byte_count < 4:
+                    if (self.waiting):
+                        uid.append(int.from_bytes(self.ser.read(), byteorder="big", signed=False))
+                        byte_count += 1
+                print(uid)
+            elif stat == b'I':
+                self.need_cmd = True
 
 
 def read():
     while True:
-        if bt.waiting():
-            bt.readStat()
+        bt.readStat()
 
 
 def write():
@@ -71,7 +73,7 @@ def write():
 
 if __name__ == "__main__":
     # TODO: Please modify the port name.
-    bt = bluetooth("COM5")
+    bt = BluetoothRemoteController("COM5")
     while not bt.is_open():
         pass
     print("BT Connected!")
