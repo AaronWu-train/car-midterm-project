@@ -8,7 +8,7 @@ char line2[16] = "now on:         ";
 const int PWMA = 9, AIN1 = 11, AIN2 = 8; // Right motor
 const int PWMB = 10, BIN1 = 12, BIN2 = 13; // Left motor
 const int LEFT2 = A8, LEFT1 = A9, MIDDLE = A10, RIGHT1 = A11, RIGHT2 = A12; // IR modules
-const int RST_PIN = 49, SS_PIN = 53; // RFID
+const int RST_PIN = 9, SS_PIN = 53; // RFID
 
 struct DigitalIR {
     int pin;
