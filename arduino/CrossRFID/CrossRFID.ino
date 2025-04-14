@@ -8,7 +8,7 @@ char line2[16] = "now on:         ";
 const int PWMA = 9, AIN1 = 11, AIN2 = 8; // Right motor
 const int PWMB = 10, BIN1 = 12, BIN2 = 13; // Left motor
 const int LEFT2 = A8, LEFT1 = A9, MIDDLE = A10, RIGHT1 = A11, RIGHT2 = A12; // IR modules
-const int RST_PIN = 7, SS_PIN = 53; // RFID
+const int RST_PIN = 49, SS_PIN = 53; // RFID
 
 struct DigitalIR {
     int pin;
@@ -19,9 +19,9 @@ struct DigitalIR {
 struct Motor {
     int pwm_pin, dir_pin1, dir_pin2; // motor controll pins
     int now_dir, now_speed;
-    int speed_delta = 20;
-    Motor() {}
-    Motor(int pwm_pin, int dir_pin1, int dir_pin2) : pwm_pin(pwm_pin), dir_pin1(dir_pin1), dir_pin2(dir_pin2), now_dir(-1), now_speed(0) {
+    int speed_delta;
+    Motor(){}
+    Motor(int pwm_pin, int dir_pin1, int dir_pin2, int speed_delta = 20) : pwm_pin(pwm_pin), dir_pin1(dir_pin1), dir_pin2(dir_pin2), speed_delta(speed_delta), now_dir(-1), now_speed(0) {
         pinMode(pwm_pin, OUTPUT);
         pinMode(dir_pin1, OUTPUT);
         pinMode(dir_pin2, OUTPUT);
@@ -73,22 +73,29 @@ struct ForwardState : StateSequenceNode {
     bool checkStateEnd(int ir_result[5], int left_speed, int right_speed) {
         int sum = 0;
         for (int i = 0; i < 5; ++i) sum += ir_result[i];
-        // line1[8] = counter + '0';
-        // lcd.setCursor(0, 0);
-        // lcd.print(line1);
-        // Serial.print(counter);
-        // Serial.println(node_count);
-        // line2[7] = now_on + '0';
-        // lcd.setCursor(0, 1);
-        // lcd.print(line2);
         if (sum >= 4) {
             if (now_on == 0) {
-                // Serial.println(counter);
-                now_on = 1, ++counter;
-                // Serial.println(counter);
-                if (counter >= node_count) return true;    
+                now_on = 1, counter++;
+                if (counter >= node_count) {
+                    delay(380);
+                    // Serial.println(counter);
+                    return true;    
+                }
             }
-        } else now_on = 0; 
+        } else {
+            now_on = 0;
+        } 
+        // if (sum >= 4) {
+        //     now_on = 1;
+        // } else {
+        //     if (now_on == 1) {
+        //         now_on = 0, counter++;
+        //         if (counter >= node_count) {
+        //             // Serial.println(counter);
+        //             return true;    
+        //         }
+        //     }
+        // } 
         return false;
     }
 };
@@ -99,7 +106,7 @@ struct TurnRightState : StateSequenceNode {
         state = TURN_RIGHT;
     }
     bool checkStateEnd(int ir_result[5], int left_speed, int right_speed) {
-        if ((ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && !ir_result[0]) {
+        if ((!ir_result[3] && !ir_result[4]) && (ir_result[0] || ir_result[1] || ir_result[2])) { // ((ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && !ir_result[0]) {
             if (now_on == 0) {
                 now_on = 1, ++counter;
                 if (counter >= line_count) return true;    
@@ -115,7 +122,7 @@ struct TurnLeftState : StateSequenceNode {
         state = TURN_LEFT;
     }
     bool checkStateEnd(int ir_result[5], int left_speed, int right_speed) {
-        if ((ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && !ir_result[0]) {
+        if ((ir_result[2] || ir_result[3] || ir_result[4]) && (!ir_result[0] && !ir_result[1])) { // ((ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && !ir_result[0]) {
             if (now_on == 0) {
                 now_on = 1, ++counter;
                 if (counter >= line_count) return true;    
@@ -138,20 +145,51 @@ public:
     void init(int ss_pin, int rst_pin) {
         SPI.begin();
         mfrc522 = new MFRC522(ss_pin, rst_pin);
-        mfrc522->PCD_Init();
         Serial.println("Read UID on a MIFARE PICC:");
     }
-    DetectionResult detect() {
-        if(!mfrc522->PICC_IsNewCardPresent()) return {false};
-        if(!mfrc522->PICC_ReadCardSerial()) return {false};
-        Serial.println(F("**Card Detected:**"));
-        DetectionResult result = {true};
-        result.uid = mfrc522->uid.uidByte;
-        result.uid_size = mfrc522->uid.size;
-        mfrc522->PICC_HaltA();
-        mfrc522->PCD_StopCrypto1();
-        return result;
+    RFIDSensor::DetectionResult detect() {
+        // 靜態變數用來追蹤卡片是否仍在讀取區
+        static bool cardProcessed = false;
+        mfrc522->PCD_Init();
+
+        // 檢查是否有新卡進入
+        if(mfrc522->PICC_IsNewCardPresent()) {
+            // 如果新卡進入且尚未處理，則進行讀取
+            if(!cardProcessed && mfrc522->PICC_ReadCardSerial()) {
+                cardProcessed = true;
+                Serial.println(F("Card Detected:"));
+                RFIDSensor::DetectionResult result;
+                result.detected = true;
+                result.uid = mfrc522->uid.uidByte;
+                result.uid_size = mfrc522->uid.size;
+
+                // 呼叫 Halt 與 StopCrypto1 結束本次讀取狀態
+                mfrc522->PICC_HaltA();
+                mfrc522->PCD_StopCrypto1();
+
+                // 延時幾十毫秒，給模組足夠的時間重置為待命狀態
+                delay(50);
+
+                return result;
+            }
+        } else {
+            // 當感應區內無卡時，重置處理標記以便下次新卡進入時能再次讀取
+            cardProcessed = false;
+        }
+        // 若未滿足讀取條件，回傳未偵測狀態
+        return {false};
     }
+    // DetectionResult detect() {
+    //     if(!mfrc522->PICC_IsNewCardPresent()) return {false};
+    //     if(!mfrc522->PICC_ReadCardSerial()) return {false};
+    //     Serial.println(F("**Card Detected:**"));
+    //     DetectionResult result = {true};
+    //     result.uid = mfrc522->uid.uidByte;
+    //     result.uid_size = mfrc522->uid.size;
+    //     mfrc522->PICC_HaltA();
+    //     mfrc522->PCD_StopCrypto1();
+    //     return result;
+    // }
 };
 
 // current hardware is using Serial1 as its communication port
@@ -191,7 +229,7 @@ public:
         while (true) {
             cmd_byte = Serial1.read();
             Serial.println(cmd_byte);
-            if (cmd_byte == 0b11110000) {
+            if (cmd_byte == 0b00000000) {
                 Serial.println("command stream terminate.");
                 temp = new StateSequenceNode();
                 last->next_state = temp;
@@ -263,8 +301,8 @@ public:
         digital_ir[3] = DigitalIR(RIGHT1);
         digital_ir[4] = DigitalIR(RIGHT2);
         // motor setting up
-        right_motor = Motor(PWMA, AIN1, AIN2);
-        left_motor = Motor(PWMB, BIN1, BIN2);
+        left_motor = Motor(PWMB, BIN1, BIN2, 20);
+        right_motor = Motor(PWMA, AIN1, AIN2, 20 * motor_speed_bias);
         // state
         now_state = new StateSequenceNode();
         now_state->next_state = nullptr;
@@ -307,11 +345,11 @@ public:
             delete now_node;
         }
         if (now_state->state == FORWARD) {
-            forward(200);
+            forward(100);
         } else if (now_state->state == TURN_RIGHT) {
-            turnRight(80);
+            turnRight(50);
         } else if (now_state->state == TURN_LEFT) {
-            turnRight(-80);
+            turnRight(-50);
         } else if (now_state->state == STOP) {
             stop();
         }

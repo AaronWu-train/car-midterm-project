@@ -71,7 +71,7 @@ def write():
 
 if __name__ == "__main__":
     # TODO: Please modify the port name.
-    bt = bluetooth("COM10")
+    bt = bluetooth("COM5")
     while not bt.is_open():
         pass
     print("BT Connected!")
@@ -89,7 +89,6 @@ if __name__ == "__main__":
 # 32 + t: turn left for t * 90 degrees (0 <= t <= 15)
 # 16 ~ 31: wait until two wheels are stopped
 
-# 130 16 65 129 240
-# 65 240
-# 131 16 240
-# 129 16 34 16 129 16 240
+# 129 16 66 16 129 16 0
+#
+#
