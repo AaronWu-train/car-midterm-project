@@ -10,7 +10,7 @@ class TSP:
     :param scores: 一維列表，scores[i] 為節點 i 的分數（起點分數可視需求設定，如設為 0）
     """
     
-    def __init__(self, dist, scores, T):
+    def __init__(self, dist, scores):
         self.dist = dist
         self.scores = scores
         n = len(dist)
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     start_point = 3
 
     start_time = time.perf_counter()
-    tsp = TSP(dist_matrix, scores, T_limit)
+    tsp = TSP(dist_matrix, scores)
     max_score, best_path = tsp.solve(T_limit, start=start_point, previsited=previsited)
     
     if best_path is None:
