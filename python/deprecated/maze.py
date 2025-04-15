@@ -7,7 +7,7 @@ from typing import List
 import numpy as np
 import pandas
 
-from node import Direction, Node
+from python.deprecated.node import Direction, Node
 
 log = logging.getLogger(__name__)
 
