@@ -47,7 +47,7 @@ struct Motor {
     }
 };
 
-enum State { NONE = -1, STOP = 0, FORWARD = 1, TURN_RIGHT = 2, TURN_LEFT = 3 }; 
+enum State { NONE = -1, STOP = 0, FORWARD = 1, TURN_RIGHT = 2, TURN_LEFT = 3, TURN_BACK = 4 }; 
 struct StateSequenceNode {
     State state;
     StateSequenceNode *next_state;
@@ -108,7 +108,10 @@ struct TurnRightState : StateSequenceNode {
         if ((ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && !ir_result[0]) { //((!ir_result[3] && !ir_result[4]) && (ir_result[0] || ir_result[1] || ir_result[2])) { // 
             if (now_on == 0) {
                 now_on = 1, ++counter;
-                if (counter >= line_count) return true;    
+                if (counter >= line_count) {
+                    delay(100);
+                    return true;
+                }    
             }
         } else now_on = 0; 
         return false;
@@ -124,12 +127,35 @@ struct TurnLeftState : StateSequenceNode {
         if ((ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && !ir_result[0]) { //((ir_result[2] || ir_result[3] || ir_result[4]) && (!ir_result[0] && !ir_result[1])) { // 
             if (now_on == 0) {
                 now_on = 1, ++counter;
-                if (counter >= line_count) return true;    
+                if (counter >= line_count) {
+                    delay(100);
+                    return true;
+                }    
             }
         } else now_on = 0; 
         return false;
     }
 };
+
+struct TurnBackState : StateSequenceNode {
+    int line_count, counter = 0;
+    int now_on = 0; // 0 for empty, 1 for line
+    TurnBackState(int line_count, int now_on) : line_count(line_count), counter(0), now_on(now_on) {
+        state = TURN_BACK;
+    }
+    bool checkStateEnd(int ir_result[5], int left_speed, int right_speed) {
+        if ((ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && !ir_result[0]) { //((ir_result[2] || ir_result[3] || ir_result[4]) && (!ir_result[0] && !ir_result[1])) { // 
+            if (now_on == 0) {
+                now_on = 1, ++counter;
+                if (counter >= line_count) {
+                    return true;
+                }
+            }
+        } else now_on = 0; 
+        return false;
+    }
+};
+
 
 struct RFIDSensor {
 private:
@@ -232,41 +258,49 @@ public:
                 last = temp;
                 break;
             }
-            else if (cmd_byte & 0b10000000 && !(cmd_byte & 0b01110000)) {
+            else if (cmd_byte & 0b10000000 && !(cmd_byte & 0b01111000)) {
                 Serial.print("forward for ");
                 Serial.print(cmd_byte & 0b00001111);
                 Serial.println(" steps.");
-                if (first == nullptr) first = last = new ForwardState(cmd_byte & 0b00001111, 0);
+                if (first == nullptr) first = last = new ForwardState(cmd_byte & 0b00000111, 0);
                 else {
-                    temp = new ForwardState(cmd_byte & 0b00001111, 0);
+                    temp = new ForwardState(cmd_byte & 0b00000111, 0);
                     last->next_state = temp;
                     last = temp;
                 }
-            } else if (cmd_byte & 0b01000000 && !(cmd_byte & 0b10110000)) {
+            } else if (cmd_byte & 0b01000000 && !(cmd_byte & 0b10111000)) {
                 Serial.print("right for ");
-                Serial.print(cmd_byte & 0b00001111);
+                Serial.print(cmd_byte & 0b00000111);
                 Serial.println(" 90 degrees.");
-                if (first == nullptr) first = last = new TurnRightState(cmd_byte & 0b00001111, 0);
+                if (first == nullptr) first = last = new TurnRightState(cmd_byte & 0b00000111, 0);
                 else {
-                    temp = new TurnRightState(cmd_byte & 0b00001111, 0);
+                    temp = new TurnRightState(cmd_byte & 0b00000111, 0);
                     last->next_state = temp;
                     last = temp;
                 }
-            } else if (cmd_byte & 0b00100000 && !(cmd_byte & 0b11010000)) {
+            } else if (cmd_byte & 0b00100000 && !(cmd_byte & 0b11011000)) {
                 Serial.print("left for ");
-                Serial.print(cmd_byte & 0b00001111);
+                Serial.print(cmd_byte & 0b00000111);
                 Serial.println(" 90 degrees.");
-                if (first == nullptr) first = last = new TurnLeftState(cmd_byte & 0b00001111, 0);
+                if (first == nullptr) first = last = new TurnLeftState(cmd_byte & 0b00000111, 0);
                 else {
-                    temp = new TurnLeftState(cmd_byte & 0b00001111, 0);
+                    temp = new TurnLeftState(cmd_byte & 0b00000111, 0);
                     last->next_state = temp;
                     last = temp;
                 }
-            } else if (cmd_byte & 0b00010000 && !(cmd_byte & 0b11100000)) {
+            } else if (cmd_byte & 0b00010000 && !(cmd_byte & 0b11101000)) {
                 Serial.print("wait until two wheels are stopped");
                 if (first == nullptr) first = last = new StopState();
                 else {
                     temp = new StopState();
+                    last->next_state = temp;
+                    last = temp;
+                }
+            } else if (cmd_byte & 0b00001000 && !(cmd_byte & 0b11110000)) {
+                Serial.print("turn back");
+                if (first == nullptr) first = last = new TurnBackState(1, 0);
+                else {
+                    temp = new TurnBackState(1, 0);
                     last->next_state = temp;
                     last = temp;
                 }
@@ -348,6 +382,8 @@ public:
             turnLeft(50);
         } else if (now_state->state == STOP) {
             stop();
+        } else if (now_state->state == TURN_BACK) {
+            turnBack(50);
         }
     }
     void detect() {
@@ -361,13 +397,17 @@ public:
         left_motor.setSpeed((speed + correction));
         right_motor.setSpeed((speed - correction) * motor_speed_bias);
     }
+    void turnLeft(int speed) {
+        left_motor.setSpeed(0.3 * speed);
+        right_motor.setSpeed(speed * motor_speed_bias);
+    }
     void turnRight(int speed) {
         left_motor.setSpeed(speed);
         right_motor.setSpeed(0.3 * speed * motor_speed_bias);
     }
-    void turnLeft(int speed) {
-        left_motor.setSpeed(0.3 * speed);
-        right_motor.setSpeed(speed * motor_speed_bias);
+    void turnBack(int speed) {
+        left_motor.setSpeed(speed);
+        right_motor.setSpeed(-speed * motor_speed_bias);
     }
     void stop() {   
         left_motor.setSpeed(0);

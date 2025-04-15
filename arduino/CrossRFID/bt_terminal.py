@@ -85,11 +85,14 @@ if __name__ == "__main__":
     write()
 
 
-# 240~255: transmission ended
+# 0: transmission ended
 # 128 + s: forward for s step (0 <= s <= 15)
 # 64 + t: turn right for t * 90 degrees (0 <= t <= 15)
 # 32 + t: turn left for t * 90 degrees (0 <= t <= 15)
 # 16 ~ 31: wait until two wheels are stopped
+# 8: turn back
+
+
 
 # 129 16 66 16 129 16 0
 #
