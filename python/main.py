@@ -3,12 +3,14 @@ import logging
 import os
 import sys
 import time
+import threading
 
 import numpy as np
 import pandas
 # from score import ScoreboardServer, ScoreboardFake
 from maze import *
-# import bt_terminal
+import bt_terminal
+from bt_terminal import BluetoothRemoteController
 from tsp import TSP
 
 logging.basicConfig(
@@ -46,18 +48,29 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
     if mode == "0":
         log.info("Mode 0: For Midterm treasure-hunting")
 
+        # Initialize Bluetooth
+        log.info(f"Connecting to Bluetooth on Port: {bt_port} ...")
+        bt = BluetoothRemoteController(bt_port)
+        while not bt.is_open():
+            pass
+        log.info("Bluetooth connected.")
+
+        readThread = threading.Thread(target = bt_terminal.read)
+        readThread.daemon = True
+        readThread.start()
+
+        # Initialize maze
         maze = Maze(maze_file, start_node=24, start_port=int(Direction.SOUTH), height=6)
         TSP_distance = maze.get_TSP_distance()
         TSP_score = maze.get_score()
         tsp = TSP(TSP_distance, TSP_score)
 
-        # [todo] Initialize Bluetooth
-
         current_treasure = 0
+        visited_treasures = [0]
 
         # Get tsp path
         current_time = time.perf_counter() - start_time
-        best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, [0])
+        best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, visited_treasures)
         print([maze.treasure_nodes[nd] for nd in tsp_path])
 
         # get path to first treasure
@@ -66,36 +79,49 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
         next_treasure = tsp_path[1]
         next_treasure_node, next_treasure_port = maze.treasure_nodes[next_treasure]
        
-        # [todo] send path to car
+        # send path to car
         path = maze.get_path(current_treasure_node, current_treasure_port, next_treasure_node, next_treasure_port)
         print(path)
+        for turn in path:
+            if turn == Turn.LEFT:
+                bt.left()
+            elif turn == Turn.RIGHT:
+                bt.right()
+            elif turn == Turn.FORWARD:
+                bt.forward()
+            elif turn == Turn.BACK:
+                bt.back()
+        bt.stop()
+        bt.write()    
+        current_treasure = next_treasure
 
         while True:
-            time.sleep(0.05)
-            # [todo] wait for car signal
-
-            # [todo] case 1: get idle state
-            # if "idle" is True:
-            #     # get next tsp path
-            #     tsp_path = tsp.solve(70 - current_time, current_treasure, [0])
-            #     print([maze.treasure_nodes[nd] for nd in tsp_path])
-
-            #     # get path to next treasure
-            #     current_treasure = tsp_path[0]
-            #     current_treasure_node, current_treasure_port = maze.treasure_nodes[current_treasure]
-            #     next_treasure = tsp_path[1]
-            #     next_treasure_node, next_treasure_port = maze.treasure_nodes[next_treasure]
-
-            #     path = maze.get_path(current_treasure_node, current_treasure_port, next_treasure_node, next_treasure_port)
-            #     print(path)
-
-                # [todo] send path to car
+            if bt.need_cmd:
+                visited_treasures.append(current_treasure)
+                best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, visited_treasures)
+                current_treasure = tsp_path[0]
+                current_treasure_node, current_treasure_port = maze.treasure_nodes[current_treasure]
+                next_treasure = tsp_path[1]
+                next_treasure_node, next_treasure_port = maze.treasure_nodes[next_treasure]
             
-            # [todo] case 2: get RFID
-            # elif "treasure" is True:
-            #     # [todo] send to server
-            #     print("UID")
+                # send path to car
+                path = maze.get_path(current_treasure_node, current_treasure_port, next_treasure_node, next_treasure_port)
+                print(path)
+                for turn in path:
+                    if turn == Turn.LEFT:
+                        bt.left()
+                    elif turn == Turn.RIGHT:
+                        bt.right()
+                    elif turn == Turn.FORWARD:
+                        bt.forward()
+                    elif turn == Turn.BACK:
+                        bt.back()
+                bt.stop()
+                bt.write()    
+                current_treasure = next_treasure
 
+
+                
 
     elif mode == "1":
         log.info("Mode 1: Self-testing mode.")
