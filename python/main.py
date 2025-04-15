@@ -7,7 +7,7 @@ import time
 import numpy as np
 import pandas
 from BTinterface import BTInterface
-from maze import Action, Maze
+from python.deprecated.maze import Action, Maze
 from score import ScoreboardServer, ScoreboardFake
 
 logging.basicConfig(
