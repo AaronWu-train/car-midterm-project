@@ -68,7 +68,7 @@ class BluetoothRemoteController:
                     if (self.waiting):
                         uid.append(int.from_bytes(self.ser.read(), byteorder="big", signed=False))
                         byte_count += 1
-                print(uid)
+                print(uid) # [TODO] send to server
             elif stat == b'I':
                 self.need_cmd = True
 
@@ -99,7 +99,17 @@ if __name__ == "__main__":
     readThread.daemon = True
     readThread.start()
 
-    write()
+    bt.forward(1)
+    bt.write()
+
+    while True:
+        if bt.need_cmd:
+            bt.left()
+            bt.forward(2)
+            bt.back()
+            bt.write()
+        if 
+        
 
 
 # 0: transmission ended
