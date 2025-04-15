@@ -3,13 +3,12 @@ import logging
 import os
 import sys
 import time
-import csv
 
 import numpy as np
 import pandas
-from score import ScoreboardServer, ScoreboardFake
+# from score import ScoreboardServer, ScoreboardFake
 from maze import *
-import bt_terminal
+# import bt_terminal
 from tsp import TSP
 
 logging.basicConfig(
@@ -39,24 +38,26 @@ def parse_args():
 def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: str):
     start_time = time.perf_counter()
 
-    point = ScoreboardServer(team_name, server_url)
+    # [TODO]: Initialize scoreboard
+    # point = ScoreboardServer(team_name, server_url)
     # point = ScoreboardFake("your team name", "data/fakeUID.csv") # for local testing
-    # TODO : Initialize necessary variables
 
-    maze = Maze(maze_file, 24, Direction.SOUTH)
-    TSP_distance = maze.get_TSP_distance()
-    TSP_score = maze.get_score()
-    tsp = TSP(TSP_distance, TSP_score)
 
     if mode == "0":
-        log.info("Mode 0: For treasure-hunting")
+        log.info("Mode 0: For Midterm treasure-hunting")
+
+        maze = Maze(maze_file, start_node=24, start_port=int(Direction.SOUTH), height=6)
+        TSP_distance = maze.get_TSP_distance()
+        TSP_score = maze.get_score()
+        tsp = TSP(TSP_distance, TSP_score)
+
         # [todo] Initialize Bluetooth
 
         current_treasure = 0
 
         # Get tsp path
         current_time = time.perf_counter() - start_time
-        tsp_path = tsp.solve(70 - current_time, current_treasure, [0])
+        best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, [0])
         print([maze.treasure_nodes[nd] for nd in tsp_path])
 
         # get path to first treasure
@@ -66,36 +67,66 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
         next_treasure_node, next_treasure_port = maze.treasure_nodes[next_treasure]
        
         # [todo] send path to car
+        path = maze.get_path(current_treasure_node, current_treasure_port, next_treasure_node, next_treasure_port)
+        print(path)
 
         while True:
             time.sleep(0.05)
             # [todo] wait for car signal
 
             # [todo] case 1: get idle state
-            if "idle" is True:
-                # get next tsp path
-                tsp_path = tsp.solve(70 - current_time, current_treasure, [0])
-                print([maze.treasure_nodes[nd] for nd in tsp_path])
+            # if "idle" is True:
+            #     # get next tsp path
+            #     tsp_path = tsp.solve(70 - current_time, current_treasure, [0])
+            #     print([maze.treasure_nodes[nd] for nd in tsp_path])
 
-                # get path to next treasure
-                current_treasure = tsp_path[0]
-                current_treasure_node, current_treasure_port = maze.treasure_nodes[current_treasure]
-                next_treasure = tsp_path[1]
-                next_treasure_node, next_treasure_port = maze.treasure_nodes[next_treasure]
+            #     # get path to next treasure
+            #     current_treasure = tsp_path[0]
+            #     current_treasure_node, current_treasure_port = maze.treasure_nodes[current_treasure]
+            #     next_treasure = tsp_path[1]
+            #     next_treasure_node, next_treasure_port = maze.treasure_nodes[next_treasure]
 
-                path = maze.get_path(current_treasure_node, current_treasure_port, next_treasure_node, next_treasure_port)
-                print(path)
+            #     path = maze.get_path(current_treasure_node, current_treasure_port, next_treasure_node, next_treasure_port)
+            #     print(path)
 
                 # [todo] send path to car
             
             # [todo] case 2: get RFID
-            elif "treasure" is True:
-                # [todo] send to server
-                print("UID")
+            # elif "treasure" is True:
+            #     # [todo] send to server
+            #     print("UID")
 
 
     elif mode == "1":
         log.info("Mode 1: Self-testing mode.")
+        maze = Maze(maze_file, 1, int(Direction.NORTH), 3)
+        TSP_distance = maze.get_TSP_distance()
+        TSP_score = maze.get_score()
+        tsp = TSP(TSP_distance, TSP_score)
+
+        print("TSP distance matrix:")
+        print(TSP_distance)
+        print("TSP score matrix:")
+        print(TSP_score)
+
+        current_treasure = 0
+
+        # Get tsp path
+        current_time = time.perf_counter() - start_time
+        best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, [0])
+        print(f"Best score: {best_score}")
+        print("TSP path:")
+        print(tsp_path)
+
+        # get path to first treasure
+        for i in range(len(tsp_path) - 1):
+            current_treasure = tsp_path[i]
+            current_treasure_node, current_treasure_port = maze.treasure_nodes[current_treasure]
+            next_treasure = tsp_path[i+1]
+            next_treasure_node, next_treasure_port = maze.treasure_nodes[next_treasure]
+        
+            path = maze.get_path(current_treasure_node, current_treasure_port, next_treasure_node, next_treasure_port)
+            print(path)
 
     else:
         log.error("Invalid mode")

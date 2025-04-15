@@ -114,7 +114,7 @@ vector<vector<double>> build_graph(vector<vector<int>> raw_data, int start_node,
     return graph;
 }
 
-pair<vector<vector<double>>, vector<vector<int>>> floyd_warshall (vector<vector<int>> raw_data, int start_node = 24, Direction start_direction = Direction::SOUTH) {
+pair<vector<vector<double>>, vector<vector<int>>> floyd_warshall (vector<vector<int>> raw_data, int start_node = 24, int start_direction = static_cast<int>(Direction::SOUTH)) {
     // @param raw_data: adjacency array of the maze
     // the columns of the content array are NOT as same as maze.csv:
     // index, North, East, South, West, ND, ED, SD, WD,
@@ -123,7 +123,7 @@ pair<vector<vector<double>>, vector<vector<int>>> floyd_warshall (vector<vector<
     // @return: the distance matrix and the next matrix
 
     int n = raw_data.size();
-    vector<vector<double>> dist = build_graph(raw_data, start_node, start_direction);
+    vector<vector<double>> dist = build_graph(raw_data, start_node, static_cast<Direction>(start_direction));
 
     const int graph_size = (n + 1) * 4;
     
@@ -131,7 +131,7 @@ pair<vector<vector<double>>, vector<vector<int>>> floyd_warshall (vector<vector<
     for (int i = 0; i < graph_size; i++) {
         for (int j = 0; j < graph_size; j++) {
             if (dist[i][j] < INF) {
-                next[i][j] = j;
+                next[i][j] = i;
             }
         }
         next[i][i] = i;
@@ -143,7 +143,7 @@ pair<vector<vector<double>>, vector<vector<int>>> floyd_warshall (vector<vector<
                 if (dist[i][k] < INF && dist[k][j] < INF) {
                     if (dist[i][j] > dist[i][k] + dist[k][j]) {
                         dist[i][j] = dist[i][k] + dist[k][j];
-                        next[i][j] = next[k][j];
+                        next[i][j] = k;
                     }
                 }
             }

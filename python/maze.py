@@ -12,10 +12,10 @@ log = logging.getLogger(__name__)
 
 
 class Turn(IntEnum):
-    U_TURN = 0
-    TURN_LEFT = 1
-    ADVANCE = 2
-    TURN_RIGHT = 3
+    BACKWARD = 0
+    LEFT = 1
+    FORWARD = 2
+    RIGHT = 3
 
 class Direction(IntEnum):
     NORTH = 0
@@ -40,21 +40,22 @@ def opposite_direction(direction):
     return Direction(opposite_direction)
 
 class Maze:
-    def __init__(self, filepath: str, start_node: int, start_port: int):
-        df = pandas.read_csv("your_file.csv")
+    def __init__(self, filepath: str, start_node: int, start_port: int, height: int = 6):
+        self.height = height
+        df = pandas.read_csv(filepath)
         new_order = ["index", "North", "East", "South", "West", "ND", "ED", "SD", "WD"]
         df_swapped = df[new_order]
         df_filled = df_swapped.fillna(-1)
-        self.raw_data = df_filled.values
+        self.raw_data = df_filled.values.astype(int).tolist()
         self.start_node = start_node
         self.start_port = start_port
 
         # call cpp helper function to get dist and next matrix
-        self.dist, self.next = floyd_warshall(self.raw_data.tolist(), start_node, start_port)
+        self.dist, self.next = floyd_warshall(self.raw_data, start_node, start_port)
 
         # figure out the treasure nodes and there ports
         self.treasure_nodes = [(start_node, Direction(start_port))]
-        self.treasure_node_map = {0: start_node} # map node id to treasure node id for tsp
+        self.treasure_node_map = {start_node: 0} # map node id to treasure node id for tsp
         for (i, row) in enumerate(self.raw_data):
             if row[0] == start_node:
                 continue
@@ -63,8 +64,10 @@ class Maze:
                 if row[j] != -1:
                     port.append(j-1)
             if len(port) == 1:
-                self.treasure_node_map[i] = len(self.treasure_nodes)
-                self.treasure_nodes.append((i, Direction(port[0])))
+                self.treasure_node_map[row[0]] = len(self.treasure_nodes)
+                self.treasure_nodes.append((row[0], Direction(port[0])))
+        print(f"Treasure nodes: {self.treasure_nodes}")
+        print(f"Treasure node map: {self.treasure_node_map}")
     
     def get_distance(self, from_node: int, from_port: int, to_node: int, to_port: int) -> float:
         return self.dist[from_node * 4 + from_port][to_node * 4 + to_port]
@@ -75,14 +78,26 @@ class Maze:
         target_id = to_node * 4 + to_port
 
         while current_id != target_id:
-            next_id = self.next[current_id][target_id]
-            next_port = Direction(next_id % 4)
-            cur_port = Direction(current_id % 4)
-            turn = get_turn_direction(from_port, opposite_direction(next_port))
-            path.append(turn)
-            current_id = next_id
+            path.append(target_id)
+            if self.next[current_id][target_id] == target_id:
+                break
+            target_id = self.next[current_id][target_id]
+            if target_id == -1:
+                break
+        path.append(current_id)
+        path.reverse()
+        print(f"Path from {from_node} to {to_node}: {path}")
+        # convert path to directions
+        directions = []
+        for i in range(len(path)-1):
+            from_node = path[i] // 4
+            from_port = path[i] % 4
+            to_node = path[i+1] // 4
+            to_port = path[i+1] % 4
+            turn = get_turn_direction(from_port, opposite_direction(to_port))
+            directions.append(turn)
 
-        return path
+        return directions
     
     def get_TSP_distance(self) -> List[List[float]]:
         n = len(self.treasure_nodes)
@@ -92,9 +107,10 @@ class Maze:
                 if node == node2:
                      dist[i][j] = 0
                 dist[i][j] = self.get_distance(node, port, node2, port2)
+        return dist
 
-    def get_score(self) -> List[float]:
-        score = [0.0] * len(self.treasure_nodes)
+    def get_score(self) -> list[int]:
+        score = [0] * len(self.treasure_nodes)
         for i, (node, port) in enumerate(self.treasure_nodes):
-            score[i] = abs(((node - 1)%6) - ((self.start_node - 1)%6)) + abs(((node - 1)//6) - ((self.start_node - 1)//6))         
+            score[i] = abs(((node - 1) % self.height) - ((self.start_node - 1)%self.height)) + abs(((node - 1)//self.height) - ((self.start_node - 1)//self.height))         
         return score
