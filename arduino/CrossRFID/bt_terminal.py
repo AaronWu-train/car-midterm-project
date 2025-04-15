@@ -4,13 +4,15 @@ import sys
 import serial
 
 
-class bluetooth:
+
+class BluetoothRemoteController:
     def __init__(self, port: str, baudrate: int = 9600):
         """Initialize an BT object, and auto-connect it."""
         # The port name is the name shown in control panel
         # And the baudrate is the communication setting, default value of HC-05 is 9600.
         self.ser = serial.Serial(port, baudrate=baudrate)
         self.need_cmd = True
+        self.cmd_stream = []
 
     def is_open(self) -> bool:
         return self.ser.is_open
@@ -38,25 +40,25 @@ class bluetooth:
         self.ser.write(output)
 
     def readStat(self) -> str:
-        # Scan the input buffer until meet a '\n'. return none if doesn't exist.
-        stat = self.ser.read()
-        print(stat)
-        if stat == b'U':
-            byte_count = 0
-            uid = []
-            while byte_count < 4:
-                if (self.waiting):
-                    uid.append(int.from_bytes(self.ser.read(), byteorder="big", signed=False))
-                    byte_count += 1
-            print(uid)
-        elif stat == b'I':
-            self.need_cmd = True
+        if bt.waiting():
+            # Scan the input buffer until meet a '\n'. return none if doesn't exist.
+            stat = self.ser.read()
+            print(stat)
+            if stat == b'U':
+                byte_count = 0
+                uid = []
+                while byte_count < 4:
+                    if (self.waiting):
+                        uid.append(int.from_bytes(self.ser.read(), byteorder="big", signed=False))
+                        byte_count += 1
+                print(uid)
+            elif stat == b'I':
+                self.need_cmd = True
 
 
 def read():
     while True:
-        if bt.waiting():
-            bt.readStat()
+        bt.readStat()
 
 
 def write():
@@ -71,7 +73,7 @@ def write():
 
 if __name__ == "__main__":
     # TODO: Please modify the port name.
-    bt = bluetooth("COM10")
+    bt = BluetoothRemoteController("COM5")
     while not bt.is_open():
         pass
     print("BT Connected!")
@@ -89,7 +91,6 @@ if __name__ == "__main__":
 # 32 + t: turn left for t * 90 degrees (0 <= t <= 15)
 # 16 ~ 31: wait until two wheels are stopped
 
-# 130 16 65 129 240
-# 65 240
-# 131 16 240
-# 129 16 34 16 129 16 240
+# 129 16 66 16 129 16 0
+#
+#
