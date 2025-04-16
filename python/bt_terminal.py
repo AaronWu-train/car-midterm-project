@@ -41,17 +41,20 @@ class BluetoothRemoteController:
         self.ser.write(bytes(self.cmd_stream))
         self.cmd_stream = []
     
-    def forward(self, step):
-        self.cmd_stream.append(128 + step)
+    def forward(self):
+        self.cmd_stream.append(130)
     
     def left(self):
         self.cmd_stream.append(33)
+        self.cmd_stream.append(129)
     
     def right(self):
         self.cmd_stream.append(65)
+        self.cmd_stream.append(129)
     
     def back(self):
         self.cmd_stream.append(8)
+        self.cmd_stream.append(129)
     
     def stop(self):
         self.cmd_stream.append(16)
@@ -100,7 +103,16 @@ if __name__ == "__main__":
     readThread.daemon = True
     readThread.start()
 
-    write()
+    bt.forward(1)
+    bt.write()
+
+    while True:
+        if bt.need_cmd:
+            bt.left()
+            bt.forward(2)
+            bt.back()
+            bt.write()
+        
         
 
 

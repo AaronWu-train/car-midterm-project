@@ -3,12 +3,15 @@ import logging
 import os
 import sys
 import time
+import threading
 
 import numpy as np
 import pandas
-from BTinterface import BTInterface
-from python.deprecated.maze import Action, Maze
-from score import ScoreboardServer, ScoreboardFake
+# from score import ScoreboardServer, ScoreboardFake
+from maze import *
+import bt_terminal
+from bt_terminal import BluetoothRemoteController
+from tsp import TSP
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -34,21 +37,122 @@ def parse_args():
     parser.add_argument("--server-url", default=SERVER_URL, help="Server URL", type=str)
     return parser.parse_args()
 
-
 def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: str):
-    maze = Maze(maze_file)
-    point = ScoreboardServer(team_name, server_url)
+    start_time = time.perf_counter()
+
+    # [TODO]: Initialize scoreboard
+    # point = ScoreboardServer(team_name, server_url)
     # point = ScoreboardFake("your team name", "data/fakeUID.csv") # for local testing
-    interface = BTInterface(port=bt_port)
-    # TODO : Initialize necessary variables
+
 
     if mode == "0":
-        log.info("Mode 0: For treasure-hunting")
-        # TODO : for treasure-hunting, which encourages you to hunt as many scores as possible
+        log.info("Mode 0: For Midterm treasure-hunting")
+
+        # Initialize Bluetooth
+        log.info(f"Connecting to Bluetooth on Port: {bt_port} ...")
+        bt = BluetoothRemoteController(bt_port)
+        while not bt.is_open():
+            pass
+        log.info("Bluetooth connected.")
+
+        readThread = threading.Thread(target = bt_terminal.read)
+        readThread.daemon = True
+        readThread.start()
+
+        # Initialize maze
+        maze = Maze(maze_file, start_node=24, start_port=int(Direction.SOUTH), height=6)
+        TSP_distance = maze.get_TSP_distance()
+        TSP_score = maze.get_score()
+        tsp = TSP(TSP_distance, TSP_score)
+
+        current_treasure = 0
+        visited_treasures = [0]
+
+        # Get tsp path
+        current_time = time.perf_counter() - start_time
+        best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, visited_treasures)
+        print([maze.treasure_nodes[nd] for nd in tsp_path])
+
+        # get path to first treasure
+        current_treasure = tsp_path[0]
+        current_treasure_node, current_treasure_port = maze.treasure_nodes[current_treasure]
+        next_treasure = tsp_path[1]
+        next_treasure_node, next_treasure_port = maze.treasure_nodes[next_treasure]
+       
+        # send path to car
+        path = maze.get_path(current_treasure_node, current_treasure_port, next_treasure_node, next_treasure_port)
+        print(path)
+        for turn in path:
+            if turn == Turn.LEFT:
+                bt.left()
+            elif turn == Turn.RIGHT:
+                bt.right()
+            elif turn == Turn.FORWARD:
+                bt.forward()
+            elif turn == Turn.BACK:
+                bt.back()
+        bt.stop()
+        bt.write()    
+        current_treasure = next_treasure
+
+        while True:
+            if bt.need_cmd:
+                visited_treasures.append(current_treasure)
+                best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, visited_treasures)
+                current_treasure = tsp_path[0]
+                current_treasure_node, current_treasure_port = maze.treasure_nodes[current_treasure]
+                next_treasure = tsp_path[1]
+                next_treasure_node, next_treasure_port = maze.treasure_nodes[next_treasure]
+            
+                # send path to car
+                path = maze.get_path(current_treasure_node, current_treasure_port, next_treasure_node, next_treasure_port)
+                print(path)
+                for turn in path:
+                    if turn == Turn.LEFT:
+                        bt.left()
+                    elif turn == Turn.RIGHT:
+                        bt.right()
+                    elif turn == Turn.FORWARD:
+                        bt.forward()
+                    elif turn == Turn.BACK:
+                        bt.back()
+                bt.stop()
+                bt.write()    
+                current_treasure = next_treasure
+
+
+                
 
     elif mode == "1":
         log.info("Mode 1: Self-testing mode.")
-        # TODO: You can write your code to test specific function.
+        maze = Maze(maze_file, 1, int(Direction.NORTH), 3)
+        TSP_distance = maze.get_TSP_distance()
+        TSP_score = maze.get_score()
+        tsp = TSP(TSP_distance, TSP_score)
+
+        print("TSP distance matrix:")
+        print(TSP_distance)
+        print("TSP score matrix:")
+        print(TSP_score)
+
+        current_treasure = 0
+
+        # Get tsp path
+        current_time = time.perf_counter() - start_time
+        best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, [0])
+        print(f"Best score: {best_score}")
+        print("TSP path:")
+        print(tsp_path)
+
+        # get path to first treasure
+        for i in range(len(tsp_path) - 1):
+            current_treasure = tsp_path[i]
+            current_treasure_node, current_treasure_port = maze.treasure_nodes[current_treasure]
+            next_treasure = tsp_path[i+1]
+            next_treasure_node, next_treasure_port = maze.treasure_nodes[next_treasure]
+        
+            path = maze.get_path(current_treasure_node, current_treasure_port, next_treasure_node, next_treasure_port)
+            print(path)
 
     else:
         log.error("Invalid mode")

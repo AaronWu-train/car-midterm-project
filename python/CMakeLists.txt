@@ -8,5 +8,5 @@ set(CMAKE_CXX_STANDARD 17)
 set(PYBIND11_FINDPYTHON ON)
 find_package(pybind11 CONFIG REQUIRED)
 
-pybind11_add_module(maze maze.cpp)
-install(TARGETS maze DESTINATION .)
+pybind11_add_module(maze_helper maze_helper.cpp)
+install(TARGETS maze_helper DESTINATION .)

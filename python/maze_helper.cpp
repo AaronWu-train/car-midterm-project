@@ -9,6 +9,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "delay_time.h"
+
 using namespace std;
 namespace py = pybind11;
 
@@ -73,7 +75,7 @@ Direction get_direction(int graph_id) {
     return static_cast<Direction>(graph_id % 4);
 }
 
-vector<vector<double>> build_graph(vector<vector<int>> raw_data) {
+vector<vector<double>> build_graph(vector<vector<int>> raw_data, int start_node, Direction start_direction) {
     // @param raw_data: adjacency array of the maze
     // the columns of the content array are NOT as same as maze.csv:
     // index, North, East, South, West, ND, ED, SD, WD,
@@ -82,6 +84,7 @@ vector<vector<double>> build_graph(vector<vector<int>> raw_data) {
     for (int i = 0; i < n * 4 + 4; i++) {
         graph[i][i] = 0;
     }
+    graph[static_cast<int>(start_direction)][start_node * 4 + static_cast<int>(start_direction)] = 0;
 
     for (int i = 0; i < n; i++) {
         int current_node = raw_data[i][0];
@@ -95,7 +98,14 @@ vector<vector<double>> build_graph(vector<vector<int>> raw_data) {
                     Turn turn = get_turn(from, to);
                     int from_graph_id = get_graph_id(current_node, from);
                     int to_graph_id = get_graph_id(next_node, opposite_direction(to));
-                    double weight = raw_data[i][j + 4]; // [todo] different weight for each direction
+                    double weight = raw_data[i][j + 4] * DelayTime::FORWARD;
+                    if (turn == Turn::BACKWARD) {
+                        weight += DelayTime::BACKWARD;
+                    } else if (turn == Turn::LEFT) {
+                        weight += DelayTime::LEFT;
+                    } else if (turn == Turn::RIGHT) {
+                        weight += DelayTime::RIGHT;
+                    } 
                     graph[from_graph_id][to_graph_id] = weight;
                 }
             }
@@ -104,46 +114,47 @@ vector<vector<double>> build_graph(vector<vector<int>> raw_data) {
     return graph;
 }
 
-pair<vector<vector<double>>, vector<vector<int>>> floyd_warshall (vector<vector<int>> raw_data){
+pair<vector<vector<double>>, vector<vector<int>>> floyd_warshall (vector<vector<int>> raw_data, int start_node = 24, int start_direction = static_cast<int>(Direction::SOUTH)) {
     // @param raw_data: adjacency array of the maze
     // the columns of the content array are NOT as same as maze.csv:
     // index, North, East, South, West, ND, ED, SD, WD,
+    // @param start_node: the start node id, 
+    // @param start_direction: the start direction id
     // @return: the distance matrix and the next matrix
 
     int n = raw_data.size();
-    vector<vector<double>> dist = build_graph(raw_data);
+    vector<vector<double>> dist = build_graph(raw_data, start_node, static_cast<Direction>(start_direction));
 
     const int graph_size = (n + 1) * 4;
     
     vector<vector<int>> next(graph_size, vector<int>(graph_size, -1));
-    for (int i = 1; i < graph_size; i++) {
-        for (int j = 1; j < graph_size; j++) {
+    for (int i = 0; i < graph_size; i++) {
+        for (int j = 0; j < graph_size; j++) {
             if (dist[i][j] < INF) {
-                next[i][j] = j;
+                next[i][j] = i;
             }
         }
         next[i][i] = i;
     }
 
-    for (int k = 1; k < graph_size; k++) {
-        for (int i = 1; i < graph_size; i++) {
-            for (int j = 1; j < graph_size; j++) {
+    for (int k = 0; k < graph_size; k++) {
+        for (int i = 0; i < graph_size; i++) {
+            for (int j = 0; j < graph_size; j++) {
                 if (dist[i][k] < INF && dist[k][j] < INF) {
                     if (dist[i][j] > dist[i][k] + dist[k][j]) {
                         dist[i][j] = dist[i][k] + dist[k][j];
-                        next[i][j] = next[k][j];
+                        next[i][j] = k;
                     }
                 }
             }
         }
     }
-
     return make_pair(dist, next);
 }
 
-PYBIND11_MODULE(maze, m) {
+PYBIND11_MODULE(maze_helper, m) {
     m.doc() = "Maze Floyd-Warshall Module, return two 2D array: dist and next"; 
-    m.def("floyd_warshall", &floyd_warshall, "A function that return distance matrix using Floyd-Warshall algorithm", py::arg("raw_data"));
+    m.def("floyd_warshall", &floyd_warshall, "A function that return distance matrix using Floyd-Warshall algorithm", py::arg("raw_data"), py::arg("start_node"), py::arg("start_direction"));
 }
 
 // int main() {
