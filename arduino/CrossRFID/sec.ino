@@ -105,6 +105,11 @@ struct TurnRightState : StateSequenceNode {
       startTime = millis();
       timingStarted = true;
     }
+    if (millis() - startTime >= duration ) {
+        if (ir_result[2] || ir_result[3] || ir_result[4]) return true;
+        return false;
+    }
+    return false;
     // 當經過的毫秒數大於等於 duration (1000 毫秒) ，回傳 true 表示狀態結束
     return (millis() - startTime >= duration);
   }
@@ -131,8 +136,12 @@ struct TurnLeftState : StateSequenceNode {
       startTime = millis();
       timingStarted = true;
     }
+    if (millis() - startTime >= duration ) {
+        if (ir_result[2] || ir_result[3] || ir_result[4]) return true;
+        return false;
+    }
     // 當經過的毫秒數大於等於 duration (1000 毫秒) ，回傳 true 表示狀態結束
-    return (millis() - startTime >= duration);
+    return false;
   }
 };
 
