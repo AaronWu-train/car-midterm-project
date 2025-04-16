@@ -94,7 +94,7 @@ def write():
 
 if __name__ == "__main__":
     # TODO: Please modify the port name.
-    bt = BluetoothRemoteController("COM5")
+    bt = BluetoothRemoteController("COM4")
     while not bt.is_open():
         pass
     print("BT Connected!")
