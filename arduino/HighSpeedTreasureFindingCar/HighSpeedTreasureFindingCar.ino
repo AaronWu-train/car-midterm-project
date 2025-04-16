@@ -71,7 +71,7 @@ struct ForwardState : StateSequenceNode {
 
   
   ForwardState(bool isPostTurn)
-    : duration(isPostTurn ? 400UL : 580UL), startTime(0), timingStarted(false) {
+    : duration(isPostTurn ? 200UL : 580UL), startTime(0), timingStarted(false) {
     state = FORWARD;
   }
 
@@ -85,7 +85,7 @@ struct ForwardState : StateSequenceNode {
 };
 struct TurnRightState : StateSequenceNode {
     
-  const unsigned long duration = 400;
+  const unsigned long duration = 100;
   unsigned long startTime;  // 記錄計時開始的時間
   bool timingStarted;       // 記錄是否已開始計時
 
@@ -116,7 +116,7 @@ struct TurnRightState : StateSequenceNode {
 };
 struct TurnLeftState : StateSequenceNode {
     // 固定右轉持續時間：1 秒 = 1000 毫秒
-  const unsigned long duration = 400;
+  const unsigned long duration = 100;
   unsigned long startTime;  // 記錄計時開始的時間
   bool timingStarted;       // 記錄是否已開始計時
 
@@ -137,11 +137,11 @@ struct TurnLeftState : StateSequenceNode {
       timingStarted = true;
     }
     if (millis() - startTime >= duration ) {
-        if (ir_result[2] || ir_result[3] || ir_result[4]) return true;
+        if (ir_result[0] || ir_result[1] || ir_result[2]) return true;
         return false;
     }
     // 當經過的毫秒數大於等於 duration (1000 毫秒) ，回傳 true 表示狀態結束
-    return false;
+    return (millis() - startTime >= duration);
   }
 };
 
@@ -420,12 +420,12 @@ public:
         right_motor.setSpeed((speed - correction) * motor_speed_bias);
     }
     void turnLeft(int speed) {
-        left_motor.setSpeed(0.3 * speed);
+        left_motor.setSpeed(-speed);
         right_motor.setSpeed(speed * motor_speed_bias);
     }
     void turnRight(int speed) {
         left_motor.setSpeed(speed);
-        right_motor.setSpeed(0.3 * speed * motor_speed_bias);
+        right_motor.setSpeed(-speed * motor_speed_bias);
     }
     void turnBack(int speed) {
         left_motor.setSpeed(speed);
