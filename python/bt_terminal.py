@@ -112,7 +112,7 @@ if __name__ == "__main__":
             bt.forward(2)
             bt.back()
             bt.write()
-        
+        if 
         
 
 
