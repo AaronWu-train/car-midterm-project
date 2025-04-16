@@ -103,16 +103,8 @@ if __name__ == "__main__":
     readThread.daemon = True
     readThread.start()
 
-    bt.forward(1)
-    bt.write()
+    write()
 
-    while True:
-        if bt.need_cmd:
-            bt.left()
-            bt.forward(2)
-            bt.back()
-            bt.write()
-        if 
         
 
 
