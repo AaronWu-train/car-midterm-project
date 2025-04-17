@@ -116,7 +116,8 @@ if __name__ == "__main__":
 # 8: turn back
 
 
-
-# 129 16 66 16 129 16 0
-#
-#
+# forward 32
+# turn left 64
+# turn right 96
+# turn back 128
+# end 0
