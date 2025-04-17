@@ -356,7 +356,8 @@ public:
         if (timeUp && endMet) {
             state_queue.pop();
             current_state_start_time = millis();
-        } else if (current_state.state == State::PossibleState::FORWARD) {
+        }
+        if (current_state.state == State::PossibleState::FORWARD) {
             double baseSpeed = forward_speed;
             if (timeUp) baseSpeed *= 0.7;
             int sum = 0;
@@ -372,62 +373,70 @@ public:
             right_motor.setSpeed((baseSpeed - correction) * motor_speed_bias);
             return;
         } else if (current_state.state == State::PossibleState::TURN_LEFT) {
-            if (timeUp)
+            double baseSpeed = turn_speed;
+            if (timeUp) baseSpeed *= 0.7;
+            int sum = 0;
+            double weight_sum = 0;
+            for (int i = 0; i < 7; ++i) {
+                sum += ir_result[i];
+                weight_sum += ir_weight[i] * ir_result[i];
+            }
+            if (timeUp && sum)
             {
-                int sum = 0;
-                double weight_sum = 0;
-                for (int i = 0; i < 7; ++i) {
-                    sum += ir_result[i];
-                    weight_sum += ir_weight[i] * ir_result[i];
-                }
-                double corrected_speed = sum ? turn_speed * weight_sum / sum / 10 : 0;
-                left_motor.setSpeed(-turn_speed_ratio * corrected_speed);
-                right_motor.setSpeed(-corrected_speed * motor_speed_bias);
+                double corrected_speed = sum ? baseSpeed * weight_sum / sum / 10 : 0;
+                if (0 <= corrected_speed < 55) corrected_speed = 55;
+                if (-55 < corrected_speed < 0) corrected_speed = -55;
+                left_motor.setSpeed(turn_speed_ratio * corrected_speed);
+                right_motor.setSpeed(corrected_speed * motor_speed_bias);
             }
             else 
             {
-                left_motor.setSpeed(turn_speed_ratio * turn_speed);
-                right_motor.setSpeed(turn_speed * motor_speed_bias);
+                left_motor.setSpeed(turn_speed_ratio * baseSpeed);
+                right_motor.setSpeed(baseSpeed * motor_speed_bias);
             }
-        }
-        else if (current_state.state == State::PossibleState::TURN_RIGHT)
-        {
-            if (timeUp)
+        } else if (current_state.state == State::PossibleState::TURN_RIGHT) {
+            double baseSpeed = turn_speed;
+            if (timeUp) baseSpeed *= 0.7;
+            int sum = 0;
+            double weight_sum = 0;
+            for (int i = 0; i < 7; ++i) {
+                sum += ir_result[i];
+                weight_sum += ir_weight[i] * ir_result[i];
+            }
+            if (timeUp && sum)
             {
-                int sum = 0;
-                double weight_sum = 0;
-                for (int i = 0; i < 7; ++i) {
-                    sum += ir_result[i];
-                    weight_sum += ir_weight[i] * ir_result[i];
-                }
-                double corrected_speed = sum ? turn_speed * weight_sum / sum / 10 : 0;
+                double corrected_speed = sum ? baseSpeed * weight_sum / sum / 10: 0;
+                if (0 <= corrected_speed < 55) corrected_speed = 55;
+                if (-55 < corrected_speed < 0) corrected_speed = -55;
                 left_motor.setSpeed(corrected_speed);
                 right_motor.setSpeed(corrected_speed * motor_speed_bias * turn_speed_ratio);
             }
             else 
             {
-                left_motor.setSpeed(turn_speed);
-                right_motor.setSpeed(turn_speed * motor_speed_bias * turn_speed_ratio);
+                left_motor.setSpeed(baseSpeed);
+                right_motor.setSpeed(baseSpeed * motor_speed_bias * turn_speed_ratio);
             }
-        }
-        else if (current_state.state == State::PossibleState::TURN_BACK)
-        {
-            if (timeUp)
+        } else if (current_state.state == State::PossibleState::TURN_BACK) {
+            double baseSpeed = turn_speed;
+            if (timeUp) baseSpeed *= 0.5;
+            int sum = 0;
+            double weight_sum = 0;
+            for (int i = 0; i < 7; ++i) {
+                sum += ir_result[i];
+                weight_sum += ir_weight[i] * ir_result[i];
+            }
+            if (timeUp && sum)
             {
-                int sum = 0;
-                double weight_sum = 0;
-                for (int i = 0; i < 7; ++i) {
-                    sum += ir_result[i];
-                    weight_sum += ir_weight[i] * ir_result[i];
-                }
-                double corrected_speed = sum ? turn_speed * weight_sum / sum / 10: 0;
-                left_motor.setSpeed(corrected_speed);
-                right_motor.setSpeed(-corrected_speed * motor_speed_bias);
+                double corrected_speed = sum ? baseSpeed * weight_sum / sum / 10: 0;
+                if (0 <= corrected_speed < 55) corrected_speed = 55;
+                if (-55 < corrected_speed < 0) corrected_speed = -55;
+                left_motor.setSpeed(-corrected_speed);
+                right_motor.setSpeed(corrected_speed * motor_speed_bias);
             }
             else 
             {
-                left_motor.setSpeed(-turn_speed);
-                right_motor.setSpeed(turn_speed * motor_speed_bias);
+                left_motor.setSpeed(-baseSpeed);
+                right_motor.setSpeed(baseSpeed * motor_speed_bias);
             }
         }
         else if (current_state.state == State::PossibleState::STOP)
