@@ -100,7 +100,7 @@ if __name__ == "__main__":
     print("BT Connected!")
     scoreboard = ScoreboardFake("TeamName", "data/fakeUID.csv")
 
-    readThread = threading.Thread(target = read, args=(scoreboard))
+    readThread = threading.Thread(target = read, args=(scoreboard,))
     readThread.daemon = True
     readThread.start()
 
