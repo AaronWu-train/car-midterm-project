@@ -55,12 +55,12 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
             pass
         log.info("Bluetooth connected.")
 
-        readThread = threading.Thread(target = bt_terminal.read)
-        readThread.daemon = True
-        readThread.start()
+        # readThread = threading.Thread(target = bt_terminal.read)
+        # readThread.daemon = True
+        # readThread.start()
 
         # Initialize maze
-        maze = Maze(maze_file, start_node=24, start_port=int(Direction.SOUTH), height=6)
+        maze = Maze(maze_file, start_node=6, start_port=int(Direction.SOUTH), height=3)
         TSP_distance = maze.get_TSP_distance()
         TSP_score = maze.get_score()
         tsp = TSP(TSP_distance, TSP_score)
@@ -96,6 +96,7 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
         current_treasure = next_treasure
 
         while True:
+            bt.readStat(scoreboard=point)
             if bt.need_cmd:
                 visited_treasures.append(current_treasure)
                 best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, visited_treasures)
