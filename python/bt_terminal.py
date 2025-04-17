@@ -43,25 +43,22 @@ class BluetoothRemoteController:
         self.need_cmd = False
     
     def forward(self):
-        self.cmd_stream.append(130)
+        self.cmd_stream.append(32)
     
     def left(self):
-        self.cmd_stream.append(33)
-        self.cmd_stream.append(129)
+        self.cmd_stream.append(64)
     
     def right(self):
-        self.cmd_stream.append(65)
-        self.cmd_stream.append(129)
+        self.cmd_stream.append(96)
     
     def back(self):
-        self.cmd_stream.append(8)
-        self.cmd_stream.append(129)
+        self.cmd_stream.append(128)
     
     def stop(self):
-        self.cmd_stream.append(16)
+        self.cmd_stream.append(0)
 
     def readStat(self, scoreboard) -> str:
-        if bt.waiting():
+        if self.waiting():
             # Scan the input buffer until meet a '\n'. return none if doesn't exist.
             stat = self.ser.read()
             print(stat)
@@ -97,13 +94,13 @@ def write():
 
 if __name__ == "__main__":
     # TODO: Please modify the port name.
-    bt = BluetoothRemoteController("COM5")
+    bt = BluetoothRemoteController("COM4")
     while not bt.is_open():
         pass
     print("BT Connected!")
     scoreboard = ScoreboardFake("TeamName", "data/fakeUID.csv")
 
-    readThread = threading.Thread(target = read, args=(scoreboard))
+    readThread = threading.Thread(target = read, args=(scoreboard,))
     readThread.daemon = True
     readThread.start()
 
