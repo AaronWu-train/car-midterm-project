@@ -1,36 +1,6 @@
 # maze_helper.py
-
-from enum import IntEnum
 from typing import List, Tuple
-
-INF = 10**9 + 7
-
-class DelayTime:
-    FORWARD = 0.5
-    BACKWARD = 2.0
-    LEFT = 1.0
-    RIGHT = 1.0
-
-class Direction(IntEnum):
-    NORTH = 0
-    EAST  = 1
-    SOUTH = 2
-    WEST  = 3
-
-class Turn(IntEnum):
-    BACKWARD = 0
-    LEFT     = 1
-    FORWARD  = 2
-    RIGHT    = 3
-
-def get_turn(frm: Direction, to: Direction) -> Turn:
-    return Turn((to - frm) % 4)
-
-def opposite_direction(d: Direction) -> Direction:
-    return Direction((d + 2) % 4)
-
-def get_graph_id(node_id: int, d: Direction) -> int:
-    return node_id * 4 + int(d)
+from direction import *
 
 def build_graph(
     raw_data: List[List[int]],
@@ -57,7 +27,7 @@ def build_graph(
             base_dist = row[j + 4] * DelayTime.FORWARD
             for frm in Direction:
                 to   = Direction(j - 1)
-                turn = get_turn(frm, to)
+                turn = get_turn_direction(frm, to)
                 w = base_dist
                 if turn == Turn.BACKWARD:
                     w += DelayTime.BACKWARD

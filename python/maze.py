@@ -4,40 +4,12 @@ import math
 from enum import IntEnum
 from typing import List
 from maze_helper import floyd_warshall
+from direction import *
 
 import numpy as np
 import pandas
 
 log = logging.getLogger(__name__)
-
-
-class Turn(IntEnum):
-    BACKWARD = 0
-    LEFT = 1
-    FORWARD = 2
-    RIGHT = 3
-
-class Direction(IntEnum):
-    NORTH = 0
-    EAST = 1
-    SOUTH = 2
-    WEST = 3
-
-def get_turn_direction(from_direction, to_direction):
-    turn = (to_direction - from_direction + 4) % 4
-    return Turn(turn)
-
-def after_turn_direction(from_direction, turn):
-    direction = (from_direction + turn) % 4
-    return Direction(direction)
-
-def before_turn_direction(to_direction, turn):
-    direction = (to_direction - turn + 4) % 4
-    return Direction(direction)
-
-def opposite_direction(direction):
-    opposite_direction = (direction + 2) % 4
-    return Direction(opposite_direction)
 
 class Maze:
     def __init__(self, filepath: str, start_node: int, start_port: int, height: int = 6):
@@ -70,12 +42,12 @@ class Maze:
         print(f"Treasure node map: {self.treasure_node_map}")
     
     def get_distance(self, from_node: int, from_port: int, to_node: int, to_port: int) -> float:
-        return self.dist[from_node * 4 + from_port][to_node * 4 + to_port]
+        return self.dist[get_graph_id(from_node, from_port)][get_graph_id(to_node, to_port)]
 
     def get_path(self, from_node: int, from_port: int, to_node: int, to_port: int) -> List[Direction]:
         path = []
-        current_id = from_node * 4 + from_port
-        target_id = to_node * 4 + to_port
+        current_id = get_graph_id(from_node, from_port)
+        target_id = get_graph_id(to_node, to_port)
 
         while current_id != target_id:
             path.append(target_id)
