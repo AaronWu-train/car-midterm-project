@@ -58,7 +58,7 @@ class BluetoothRemoteController:
         self.cmd_stream.append(0)
 
     def readStat(self, scoreboard) -> str:
-        if bt.waiting():
+        if self.waiting():
             # Scan the input buffer until meet a '\n'. return none if doesn't exist.
             stat = self.ser.read()
             print(stat)
