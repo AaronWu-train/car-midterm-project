@@ -7,7 +7,7 @@ import threading
 
 import numpy as np
 import pandas
-# from score import ScoreboardServer, ScoreboardFake
+from score import ScoreboardServer, ScoreboardFake
 from maze import *
 import bt_terminal
 from bt_terminal import BluetoothRemoteController
@@ -41,7 +41,7 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
     start_time = time.perf_counter()
 
     # [TODO]: Initialize scoreboard
-    # point = ScoreboardServer(team_name, server_url)
+    point = ScoreboardServer(team_name, server_url)
     # point = ScoreboardFake("your team name", "data/fakeUID.csv") # for local testing
 
 
