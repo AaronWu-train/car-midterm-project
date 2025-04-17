@@ -320,6 +320,8 @@ public:
         // IR
         for (int i = 0; i < 7; ++i)
             ir_result[i] = digital_ir[i].read();
+        for (int i = 0; i < 7; ++i) Serial.print(ir_result[i]);
+        Serial.println("");
         // send idle if state queue is empty
         if (state_queue.empty())
         {
@@ -356,15 +358,14 @@ public:
             state_queue.pop();
             current_state_start_time = millis();
         }
-        else if (current_state.state == State::PossibleState::FORWARD)
+        else if (current_state.state == State::PossibleState::FORWARD && timeUp)
         {
-            bool timeUp = millis() - current_state_start_time >= current_state.duration;
             bool endMet = forwardExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
             // let the car not to run out of the grid
             double baseSpeed = forward_speed;
             if (timeUp && !endMet)
             {
-                baseSpeed *= 0.5;
+                baseSpeed *= 0.7;
             }
 
             int sum = 0;
@@ -374,11 +375,85 @@ public:
                 sum += ir_result[i];
                 weight_sum += ir_weight[i] * ir_result[i];
             }
-            double correction = sum ? propotional_gain * forward_speed * weight_sum / sum : 0;
+            double correction = sum ? propotional_gain * baseSpeed * weight_sum / sum : 0;
             correction = constrain(correction, -15.0, 15.0);
 
             left_motor.setSpeed(baseSpeed + correction);
             right_motor.setSpeed((baseSpeed - correction) * motor_speed_bias);
+            return;
+        }
+        else if (current_state.state == State::PossibleState::TURN_LEFT && timeUp)
+        {
+            bool endMet = forwardExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
+            // let the car not to run out of the grid
+            double baseSpeed = turn_speed;
+            if (timeUp && !endMet)
+            {
+                baseSpeed *= 0.7;
+            }
+
+            int sum = 0;
+            double weight_sum = 0;
+            for (int i = 0; i < 7; ++i)
+            {
+                sum += ir_result[i];
+                weight_sum += ir_weight[i] * ir_result[i];
+            }
+            double correction = sum ? propotional_gain * baseSpeed * weight_sum / sum : 0;
+            correction = constrain(correction, -15.0, 15.0);
+
+            left_motor.setSpeed(turn_speed_ratio * correction);
+            right_motor.setSpeed(baseSpeed * motor_speed_bias);
+            return;
+        }
+        else if (current_state.state == State::PossibleState::TURN_RIGHT && timeUp)
+        {
+            bool timeUp = millis() - current_state_start_time >= current_state.duration;
+            bool endMet = forwardExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
+            // let the car not to run out of the grid
+            double baseSpeed = turn_speed;
+            if (timeUp && !endMet)
+            {
+                baseSpeed *= 0.7;
+            }
+
+            int sum = 0;
+            double weight_sum = 0;
+            for (int i = 0; i < 7; ++i)
+            {
+                sum += ir_result[i];
+                weight_sum += ir_weight[i] * ir_result[i];
+            }
+            double correction = sum ? propotional_gain * baseSpeed * weight_sum / sum : 0;
+            correction = constrain(correction, -15.0, 15.0);
+
+            left_motor.setSpeed(baseSpeed);
+            right_motor.setSpeed(turn_speed_ratio * baseSpeed * motor_speed_bias);
+            return;
+        }
+        else if (current_state.state == State::PossibleState::TURN_BACK && timeUp)
+        {
+            bool endMet = forwardExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
+            // let the car not to run out of the grid
+            double baseSpeed = turn_speed;
+            if (timeUp && !endMet)
+            {
+                baseSpeed *= 0.7;
+            }
+
+            int sum = 0;
+            double weight_sum = 0;
+            for (int i = 0; i < 7; ++i)
+            {
+                sum += ir_result[i];
+                weight_sum += ir_weight[i] * ir_result[i];
+            }
+            double correction = sum ? propotional_gain * baseSpeed * weight_sum / sum : 0;
+            correction = constrain(correction, -15.0, 15.0);
+
+            left_motor.setSpeed(baseSpeed);
+            right_motor.setSpeed(-baseSpeed * motor_speed_bias);
+            return;
         }
 
         // execute current state
