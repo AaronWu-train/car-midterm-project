@@ -115,7 +115,7 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
                         bt.right()
                     elif turn == Turn.FORWARD:
                         bt.forward()
-                    elif turn == Turn.BACK:
+                    elif turn == Turn.BACKWARD:
                         bt.back()
                 bt.stop()
                 bt.write()    

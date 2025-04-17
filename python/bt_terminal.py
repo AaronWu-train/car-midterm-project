@@ -3,7 +3,9 @@ import time
 import sys
 import serial
 from score import ScoreboardServer, ScoreboardFake
+import logging
 
+log = logging.getLogger("scoreboard")
 
 class BluetoothRemoteController:
     def __init__(self, port: str, baudrate: int = 9600):
@@ -71,7 +73,10 @@ class BluetoothRemoteController:
                         byte_count += 1
                 uid_string = bytes(uid).hex().upper()
                 print(uid_string)              # 12345678
-                scoreboard.add_UID(uid_string)
+                
+                score, time_remaining = scoreboard.add_UID(uid_string)
+                current_score = scoreboard.get_current_score()
+                log.info(f"Current score: {current_score}")
             elif stat == b'I':
                 self.need_cmd = True
 
@@ -94,11 +99,14 @@ def write():
 
 if __name__ == "__main__":
     # TODO: Please modify the port name.
+    logging.basicConfig(level=logging.DEBUG)
+
     bt = BluetoothRemoteController("COM4")
+    
     while not bt.is_open():
         pass
     print("BT Connected!")
-    scoreboard = ScoreboardFake("TeamName", "data/fakeUID.csv")
+    scoreboard = ScoreboardServer("Team4", "http://140.112.175.18:5000")
 
     readThread = threading.Thread(target = read, args=(scoreboard,))
     readThread.daemon = True

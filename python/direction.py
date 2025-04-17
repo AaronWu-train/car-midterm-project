@@ -4,10 +4,10 @@ from typing import List, Tuple
 INF = 10**9 + 7
 
 class DelayTime(float, Enum):
-    FORWARD = 0.5
-    BACKWARD = 2.0
-    LEFT = 1.0
-    RIGHT = 1.0
+    FORWARD = 0.4
+    BACKWARD = 1.2
+    LEFT = 0.8
+    RIGHT = 1
 
 class Direction(IntEnum):
     NORTH = 0
