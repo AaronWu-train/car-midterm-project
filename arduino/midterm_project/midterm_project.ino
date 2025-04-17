@@ -335,164 +335,105 @@ public:
         State current_state = state_queue.front();
         bool timeUp = millis() - current_state_start_time >= current_state.duration;
         bool endMet = false;
-        switch (current_state.state)
-        {
-        case State::PossibleState::FORWARD:
-            endMet = forwardExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
-            break;
-        case State::PossibleState::TURN_LEFT:
-            endMet = turnLeftExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
-            break;
-        case State::PossibleState::TURN_RIGHT:
-            endMet = turnRightExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
-            break;
-        case State::PossibleState::TURN_BACK:
-            endMet = turnBackExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
-            break;
-        case State::PossibleState::STOP:
-            endMet = stopExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
-            break;
+        
+        switch (current_state.state) {
+            case State::PossibleState::FORWARD:
+                endMet = forwardExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
+                break;
+            case State::PossibleState::TURN_LEFT:
+                endMet = turnLeftExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
+                break;
+            case State::PossibleState::TURN_RIGHT:
+                endMet = turnRightExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
+                break;
+            case State::PossibleState::TURN_BACK:
+                endMet = turnBackExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
+                break;
+            case State::PossibleState::STOP:
+                endMet = stopExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
+                break;
         }
-        if (timeUp && endMet)
-        {
+        if (timeUp && endMet) {
             state_queue.pop();
             current_state_start_time = millis();
-        }
-        else if (current_state.state == State::PossibleState::FORWARD && timeUp)
-        {
-            bool endMet = forwardExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
-            // let the car not to run out of the grid
+        } else if (current_state.state == State::PossibleState::FORWARD) {
             double baseSpeed = forward_speed;
-            if (timeUp && !endMet)
-            {
-                baseSpeed *= 0.7;
-            }
-
+            if (timeUp) baseSpeed *= 0.7;
             int sum = 0;
             double weight_sum = 0;
-            for (int i = 0; i < 7; ++i)
-            {
+            for (int i = 0; i < 7; ++i) {
                 sum += ir_result[i];
                 weight_sum += ir_weight[i] * ir_result[i];
             }
             double correction = sum ? propotional_gain * baseSpeed * weight_sum / sum : 0;
-            correction = constrain(correction, -15.0, 15.0);
+            // correction = constrain(correction, -55.0, 55.0);
 
             left_motor.setSpeed(baseSpeed + correction);
             right_motor.setSpeed((baseSpeed - correction) * motor_speed_bias);
             return;
-        }
-        else if (current_state.state == State::PossibleState::TURN_LEFT && timeUp)
-        {
-            bool endMet = forwardExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
-            // let the car not to run out of the grid
-            double baseSpeed = turn_speed;
-            if (timeUp && !endMet)
+        } else if (current_state.state == State::PossibleState::TURN_LEFT) {
+            if (timeUp)
             {
-                baseSpeed *= 0.7;
+                int sum = 0;
+                double weight_sum = 0;
+                for (int i = 0; i < 7; ++i) {
+                    sum += ir_result[i];
+                    weight_sum += ir_weight[i] * ir_result[i];
+                }
+                double corrected_speed = sum ? turn_speed * weight_sum / sum / 10 : 0;
+                left_motor.setSpeed(-turn_speed_ratio * corrected_speed);
+                right_motor.setSpeed(-corrected_speed * motor_speed_bias);
             }
-
-            int sum = 0;
-            double weight_sum = 0;
-            for (int i = 0; i < 7; ++i)
+            else 
             {
-                sum += ir_result[i];
-                weight_sum += ir_weight[i] * ir_result[i];
+                left_motor.setSpeed(turn_speed_ratio * turn_speed);
+                right_motor.setSpeed(turn_speed * motor_speed_bias);
             }
-            double correction = sum ? propotional_gain * baseSpeed * weight_sum / sum : 0;
-            correction = constrain(correction, -15.0, 15.0);
-
-            left_motor.setSpeed(turn_speed_ratio * correction);
-            right_motor.setSpeed(baseSpeed * motor_speed_bias);
-            return;
-        }
-        else if (current_state.state == State::PossibleState::TURN_RIGHT && timeUp)
-        {
-            bool timeUp = millis() - current_state_start_time >= current_state.duration;
-            bool endMet = forwardExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
-            // let the car not to run out of the grid
-            double baseSpeed = turn_speed;
-            if (timeUp && !endMet)
-            {
-                baseSpeed *= 0.7;
-            }
-
-            int sum = 0;
-            double weight_sum = 0;
-            for (int i = 0; i < 7; ++i)
-            {
-                sum += ir_result[i];
-                weight_sum += ir_weight[i] * ir_result[i];
-            }
-            double correction = sum ? propotional_gain * baseSpeed * weight_sum / sum : 0;
-            correction = constrain(correction, -15.0, 15.0);
-
-            left_motor.setSpeed(baseSpeed);
-            right_motor.setSpeed(turn_speed_ratio * baseSpeed * motor_speed_bias);
-            return;
-        }
-        else if (current_state.state == State::PossibleState::TURN_BACK && timeUp)
-        {
-            bool endMet = forwardExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
-            // let the car not to run out of the grid
-            double baseSpeed = turn_speed;
-            if (timeUp && !endMet)
-            {
-                baseSpeed *= 0.7;
-            }
-
-            int sum = 0;
-            double weight_sum = 0;
-            for (int i = 0; i < 7; ++i)
-            {
-                sum += ir_result[i];
-                weight_sum += ir_weight[i] * ir_result[i];
-            }
-            double correction = sum ? propotional_gain * baseSpeed * weight_sum / sum : 0;
-            correction = constrain(correction, -15.0, 15.0);
-
-            left_motor.setSpeed(baseSpeed);
-            right_motor.setSpeed(-baseSpeed * motor_speed_bias);
-            return;
-        }
-
-        // execute current state
-        if (current_state.state == State::PossibleState::FORWARD)
-        {
-            int sum = 0;
-            double weight_sum = 0;
-            for (int i = 0; i < 7; ++i)
-                sum += ir_result[i], weight_sum += ir_weight[i] * ir_result[i];
-            double correction = sum ? propotional_gain * forward_speed * weight_sum / sum : 0;
-
-            double maxCorrection = 30.0;
-            if (correction > maxCorrection)
-                correction = maxCorrection;
-            else if (correction < -maxCorrection)
-                correction = -maxCorrection;
-
-            left_motor.setSpeed((forward_speed + correction));
-            right_motor.setSpeed((forward_speed - correction) * motor_speed_bias);
-        }
-        else if (current_state.state == State::PossibleState::TURN_LEFT)
-        {
-            left_motor.setSpeed(turn_speed_ratio * turn_speed);
-            right_motor.setSpeed(turn_speed * motor_speed_bias);
         }
         else if (current_state.state == State::PossibleState::TURN_RIGHT)
         {
-            left_motor.setSpeed(turn_speed);
-            right_motor.setSpeed(turn_speed_ratio * turn_speed * motor_speed_bias);
+            if (timeUp)
+            {
+                int sum = 0;
+                double weight_sum = 0;
+                for (int i = 0; i < 7; ++i) {
+                    sum += ir_result[i];
+                    weight_sum += ir_weight[i] * ir_result[i];
+                }
+                double corrected_speed = sum ? turn_speed * weight_sum / sum / 10 : 0;
+                left_motor.setSpeed(corrected_speed);
+                right_motor.setSpeed(corrected_speed * motor_speed_bias * turn_speed_ratio);
+            }
+            else 
+            {
+                left_motor.setSpeed(turn_speed);
+                right_motor.setSpeed(turn_speed * motor_speed_bias * turn_speed_ratio);
+            }
+        }
+        else if (current_state.state == State::PossibleState::TURN_BACK)
+        {
+            if (timeUp)
+            {
+                int sum = 0;
+                double weight_sum = 0;
+                for (int i = 0; i < 7; ++i) {
+                    sum += ir_result[i];
+                    weight_sum += ir_weight[i] * ir_result[i];
+                }
+                double corrected_speed = sum ? turn_speed * weight_sum / sum / 10: 0;
+                left_motor.setSpeed(corrected_speed);
+                right_motor.setSpeed(-corrected_speed * motor_speed_bias);
+            }
+            else 
+            {
+                left_motor.setSpeed(-turn_speed);
+                right_motor.setSpeed(turn_speed * motor_speed_bias);
+            }
         }
         else if (current_state.state == State::PossibleState::STOP)
         {
             left_motor.setSpeed(0);
             right_motor.setSpeed(0);
-        }
-        else if (current_state.state == State::PossibleState::TURN_BACK)
-        {
-            left_motor.setSpeed(turn_speed);
-            right_motor.setSpeed(-turn_speed * motor_speed_bias);
         }
     }
 };

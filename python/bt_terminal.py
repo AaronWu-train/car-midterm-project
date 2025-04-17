@@ -2,7 +2,7 @@ import threading
 import time
 import sys
 import serial
-from score import ScoreboardServer, ScoreboardFake
+# from score import ScoreboardServer, ScoreboardFake
 
 
 class BluetoothRemoteController:
@@ -57,7 +57,7 @@ class BluetoothRemoteController:
     def stop(self):
         self.cmd_stream.append(0)
 
-    def readStat(self, scoreboard) -> str:
+    def readStat(self) -> str:
         if bt.waiting():
             # Scan the input buffer until meet a '\n'. return none if doesn't exist.
             stat = self.ser.read()
@@ -71,14 +71,14 @@ class BluetoothRemoteController:
                         byte_count += 1
                 uid_string = bytes(uid).hex().upper()
                 print(uid_string)              # 12345678
-                scoreboard.add_UID(uid_string)
+                # scoreboard.add_UID(uid_string)
             elif stat == b'I':
                 self.need_cmd = True
 
 
-def read(scoreboard):
+def read():
     while True:
-        bt.readStat(scoreboard)
+        bt.readStat()
 
 
 def write():
@@ -98,9 +98,9 @@ if __name__ == "__main__":
     while not bt.is_open():
         pass
     print("BT Connected!")
-    scoreboard = ScoreboardFake("TeamName", "data/fakeUID.csv")
+    # scoreboard = ScoreboardFake("TeamName", "data/fakeUID.csv")
 
-    readThread = threading.Thread(target = read, args=(scoreboard,))
+    readThread = threading.Thread(target = read)
     readThread.daemon = True
     readThread.start()
 
