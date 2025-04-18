@@ -290,7 +290,7 @@ private:
     ull current_state_start_time;
     BluetoothTransmitter bluetooth_transmitter;
     bool idle_signal_sent = false;
-
+    double previous_error;
 public:
     void init()
     {
@@ -355,6 +355,7 @@ public:
         if (timeUp && endMet) {
             state_queue.pop();
             current_state_start_time = millis();
+            previous_error = 0;
         }
         if (current_state.state == State::PossibleState::FORWARD) {
             double baseSpeed = forward_speed;
@@ -365,7 +366,9 @@ public:
                 sum += ir_result[i];
                 weight_sum += ir_weight[i] * ir_result[i];
             }
-            double correction = sum ? propotional_gain * baseSpeed * weight_sum / sum : 0;
+            double error = sum ? baseSpeed * weight_sum / sum : 0;
+            double correction = propotional_gain * error + differential_gain * (error - previous_error);
+            previous_error = error;
             // correction = constrain(correction, -55.0, 55.0);
 
             left_motor.setSpeed(baseSpeed + correction);

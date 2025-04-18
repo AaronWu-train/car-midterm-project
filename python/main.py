@@ -57,8 +57,8 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
 
         
         # [TODO]: Initialize scoreboard
-        point = ScoreboardServer(team_name, server_url)
-        # point = ScoreboardFake("your team name", "data/fakeUID.csv") # for local testing
+        # point = ScoreboardServer(team_name, server_url)
+        point = ScoreboardFake("your team name", "data/fakeUID.csv") # for local testing
 
 
         # Initialize maze
