@@ -14,6 +14,8 @@ class BluetoothRemoteController:
         # And the baudrate is the communication setting, default value of HC-05 is 9600.
         self.ser = serial.Serial(port, baudrate=baudrate)
         self.need_cmd = True
+        self.previous_need_cmd_time = -1
+        self.need_cmd_minimum_time = 0.5
         self.cmd_stream = []
 
     def is_open(self) -> bool:
@@ -81,7 +83,9 @@ class BluetoothRemoteController:
                 current_score = scoreboard.get_current_score()
                 log.info(f"Current score: {current_score}")
             elif stat == b'I':
-                self.need_cmd = True
+                if time.time() - self.previous_need_cmd_time > self.need_cmd_minimum_time:
+                    self.need_cmd = True
+                    self.previous_need_cmd_time = time.time()
 
 
 def read(scoreboard):
