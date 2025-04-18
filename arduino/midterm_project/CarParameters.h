@@ -35,7 +35,7 @@ bool turnRightExtraEndCondition(int ir_result[7], int left_speed, int right_spee
     return ir_result[3] && abs(left_speed) < 70 && abs(right_speed) < 70; //ir_result[3] || ir_result[4] || ir_result[5] || ir_result[6];
 }
 bool turnBackExtraEndCondition(int ir_result[7], int left_speed, int right_speed) {
-    return  !ir_result[1] && (ir_result[2] || ir_result[3]) && !ir_result[4] && abs(left_speed) < 70 && abs(right_speed) < 70;
+    return  !ir_result[1] && (ir_result[2] || ir_result[3]) && !ir_result[4] && abs(left_speed) < 50 && abs(right_speed) < 50;
 }
 bool stopExtraEndCondition(int ir_result[7], int left_speed, int right_speed) {
     return !left_speed && !right_speed;

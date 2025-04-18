@@ -427,8 +427,8 @@ public:
             if (timeUp && sum)
             {
                 double corrected_speed = sum ? baseSpeed * weight_sum / sum / 10: 0;
-                if (0 <= corrected_speed < 55) corrected_speed = 55;
-                if (-55 < corrected_speed < 0) corrected_speed = -55;
+                if (0 <= corrected_speed < 40) corrected_speed = 40;
+                if (-40 < corrected_speed < 0) corrected_speed = -40;
                 left_motor.setSpeed(-corrected_speed);
                 right_motor.setSpeed(corrected_speed * motor_speed_bias);
             }
