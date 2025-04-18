@@ -325,7 +325,6 @@ public:
         // IR
         for (int i = 0; i < 7; ++i)
             ir_result[i] = digital_ir[i].read();
-        for (int i = 0; i < 7; ++i) Serial.print(ir_result[i]);
         Serial.println("");
         // send idle if state queue is empty
         if (state_queue.empty())

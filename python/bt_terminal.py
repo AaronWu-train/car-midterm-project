@@ -49,12 +49,16 @@ class BluetoothRemoteController:
     
     def left(self):
         self.cmd_stream.append(64)
+        self.cmd_stream.append(32)
     
     def right(self):
         self.cmd_stream.append(96)
+        self.cmd_stream.append(32)
     
     def back(self):
         self.cmd_stream.append(128)
+        self.cmd_stream.append(32)
+        
     
     def stop(self):
         self.cmd_stream.append(0)

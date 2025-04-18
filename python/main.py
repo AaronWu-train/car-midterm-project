@@ -60,7 +60,7 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
         # readThread.start()
 
         # Initialize maze
-        maze = Maze(maze_file, start_node=6, start_port=int(Direction.SOUTH), height=3)
+        maze = Maze(maze_file, start_node=1, start_port=int(Direction.SOUTH), height=3)
         TSP_distance = maze.get_TSP_distance()
         TSP_score = maze.get_score()
         tsp = TSP(TSP_distance, TSP_score)
