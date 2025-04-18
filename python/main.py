@@ -19,27 +19,30 @@ logging.basicConfig(
 
 log = logging.getLogger(__name__)
 
-# TODO : Fill in the following information
+# Default information
 TEAM_NAME = "YOUR_TEAM_NAME"
 SERVER_URL = "http://140.112.175.18:5000/"
-MAZE_FILE = "data/small_maze.csv"
-BT_PORT = ""
-
+MAZE_FILE = "data/big_maze_113.csv"
+BT_PORT = "COM4"
+HEIGHT = 6
+# HEIGHT = 3
+START_NODE = 24
+# START_NODE = 1
+START_PORT=int(Direction.SOUTH)
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", help="0: treasure-hunting, 1: self-testing", type=str)
+    parser.add_argument("mode", default=0, help="0: treasure-hunting, 1: self-testing", type=str)
     parser.add_argument("--maze-file", default=MAZE_FILE, help="Maze file", type=str)
+    parser.add_argument("--height", default=HEIGHT, help="Height of map", type=int)
+    parser.add_argument("--start-node", default=START_NODE, help="Start node", type=int)
+    parser.add_argument("--start-port", default=START_PORT, help="Start port", type=int)
     parser.add_argument("--bt-port", default=BT_PORT, help="Bluetooth port", type=str)
-    parser.add_argument(
-        "--team-name", default=TEAM_NAME, help="Your team name", type=str
-    )
+    parser.add_argument("--team-name", default=TEAM_NAME, help="Your team name", type=str)
     parser.add_argument("--server-url", default=SERVER_URL, help="Server URL", type=str)
     return parser.parse_args()
 
-def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: str):
-    start_time = time.perf_counter()
-
+def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: str, height: int, start_node: int, start_port: int):
 
     if mode == "0":
         log.info("Mode 0: For Midterm treasure-hunting")
@@ -51,18 +54,14 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
             pass
         log.info("Bluetooth connected.")
 
-        # readThread = threading.Thread(target = bt_terminal.read)
-        # readThread.daemon = True
-        # readThread.start()
 
-        
-        # [TODO]: Initialize scoreboard
-        # point = ScoreboardServer(team_name, server_url)
-        point = ScoreboardFake("your team name", "data/fakeUID.csv") # for local testing
-
+        # Initialize scoreboard
+        point = ScoreboardServer(team_name, server_url)
+        start_time = time.perf_counter()
+        # point = ScoreboardFake("your team name", "data/fakeUID.csv") # for local testing
 
         # Initialize maze
-        maze = Maze(maze_file, start_node=1, start_port=int(Direction.SOUTH), height=3)
+        maze = Maze(maze_file, start_node=start_node, start_port=start_port, height=height)
         TSP_distance = maze.get_TSP_distance()
         TSP_score = maze.get_score()
         tsp = TSP(TSP_distance, TSP_score)
@@ -73,6 +72,7 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
         # Get tsp path
         current_time = time.perf_counter() - start_time
         best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, visited_treasures)
+        print("TSP path:")
         print([maze.treasure_nodes[nd] for nd in tsp_path])
 
         # get path to first treasure
@@ -101,7 +101,18 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
             bt.readStat(scoreboard=point)
             if bt.need_cmd:
                 visited_treasures.append(current_treasure)
-                best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, visited_treasures)
+                current_time = time.perf_counter() - start_time
+                uidlist = bt.get_uid_list()
+                if len(uidlist) == 0:
+                    uidlist.append("00000000")
+                time_remaining, current_score = point.add_UID(uidlist[-1])
+                # best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, visited_treasures)
+                best_score, tsp_path = tsp.solve(time_remaining, current_treasure, visited_treasures)
+
+                if len(tsp_path) <= 1:
+                    print("No more treasures to visit.")
+                    break
+
                 current_treasure = tsp_path[0]
                 current_treasure_node, current_treasure_port = maze.treasure_nodes[current_treasure]
                 next_treasure = tsp_path[1]
@@ -122,13 +133,17 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
                 bt.stop()
                 bt.write()    
                 current_treasure = next_treasure
-
-
-                
+        
+        uidlist = bt.get_uid_list()
+        for uid in uidlist:
+            score, time_remaining = point.add_UID(uid)
+            print(f"Current score: {score}, time remaining: {time_remaining}")
+            log.info(f"Current score: {score}, time remaining: {time_remaining}")
 
     elif mode == "1":
+        start_time = time.perf_counter()
         log.info("Mode 1: Self-testing mode.")
-        maze = Maze(maze_file, 1, int(Direction.NORTH), 3)
+        maze = Maze(maze_file, 24, int(Direction.SOUTH), height=6)
         TSP_distance = maze.get_TSP_distance()
         TSP_score = maze.get_score()
         tsp = TSP(TSP_distance, TSP_score)
@@ -142,7 +157,7 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
 
         # Get tsp path
         current_time = time.perf_counter() - start_time
-        best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, [0])
+        best_score, tsp_path = tsp.solve(70, current_treasure, [0])
         print(f"Best score: {best_score}")
         print("TSP path:")
         print(tsp_path)

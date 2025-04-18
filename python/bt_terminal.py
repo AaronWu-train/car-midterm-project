@@ -17,6 +17,7 @@ class BluetoothRemoteController:
         self.previous_need_cmd_time = -1
         self.need_cmd_minimum_time = 0.5
         self.cmd_stream = []
+        self.uidlist = []
 
     def is_open(self) -> bool:
         return self.ser.is_open
@@ -78,14 +79,17 @@ class BluetoothRemoteController:
                         byte_count += 1
                 uid_string = bytes(uid).hex().upper()
                 print(uid_string)              # 12345678
-                
+                self.uidlist.append(uid_string)
                 score, time_remaining = scoreboard.add_UID(uid_string)
-                current_score = scoreboard.get_current_score()
-                log.info(f"Current score: {current_score}")
+                score, time_remaining = scoreboard.add_UID(uid_string)
+                log.info(f"Current score: {score}, time remaining: {time_remaining}")
             elif stat == b'I':
                 if time.time() - self.previous_need_cmd_time > self.need_cmd_minimum_time:
                     self.need_cmd = True
                     self.previous_need_cmd_time = time.time()
+
+    def get_uid_list(self):
+        return self.uidlist
 
 
 def read(scoreboard):
