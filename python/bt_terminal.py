@@ -49,12 +49,15 @@ class BluetoothRemoteController:
     
     def left(self):
         self.cmd_stream.append(64)
+        self.cmd_stream.append(32)
     
     def right(self):
         self.cmd_stream.append(96)
+        self.cmd_stream.append(32)
     
     def back(self):
         self.cmd_stream.append(128)
+        self.cmd_stream.append(32)
     
     def stop(self):
         self.cmd_stream.append(0)
@@ -106,7 +109,9 @@ if __name__ == "__main__":
     while not bt.is_open():
         pass
     print("BT Connected!")
-    scoreboard = ScoreboardServer("Team4", "http://140.112.175.18:5000")
+    # scoreboard = ScoreboardServer("Team4", "http://140.112.175.18:5000")
+    scoreboard = ScoreboardFake("your team name", "data/fakeUID.csv") # for local testing
+
 
     readThread = threading.Thread(target = read, args=(scoreboard,))
     readThread.daemon = True

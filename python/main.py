@@ -40,10 +40,6 @@ def parse_args():
 def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: str):
     start_time = time.perf_counter()
 
-    # [TODO]: Initialize scoreboard
-    point = ScoreboardServer(team_name, server_url)
-    # point = ScoreboardFake("your team name", "data/fakeUID.csv") # for local testing
-
 
     if mode == "0":
         log.info("Mode 0: For Midterm treasure-hunting")
@@ -59,8 +55,14 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
         # readThread.daemon = True
         # readThread.start()
 
+        
+        # [TODO]: Initialize scoreboard
+        point = ScoreboardServer(team_name, server_url)
+        # point = ScoreboardFake("your team name", "data/fakeUID.csv") # for local testing
+
+
         # Initialize maze
-        maze = Maze(maze_file, start_node=6, start_port=int(Direction.SOUTH), height=3)
+        maze = Maze(maze_file, start_node=7, start_port=int(Direction.WEST), height=3)
         TSP_distance = maze.get_TSP_distance()
         TSP_score = maze.get_score()
         tsp = TSP(TSP_distance, TSP_score)
@@ -89,13 +91,13 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
                 bt.right()
             elif turn == Turn.FORWARD:
                 bt.forward()
-            elif turn == Turn.BACK:
+            elif turn == Turn.BACKWARD:
                 bt.back()
         bt.stop()
         bt.write()    
         current_treasure = next_treasure
 
-        while True:
+        while len(tsp_path) > 1:
             bt.readStat(scoreboard=point)
             if bt.need_cmd:
                 visited_treasures.append(current_treasure)
