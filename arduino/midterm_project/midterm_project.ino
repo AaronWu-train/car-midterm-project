@@ -287,11 +287,9 @@ private:
     Motor left_motor, right_motor;
     RFIDSensor rfid_sensor;
     Queue<State> state_queue;
-    ull current_state_start_time; // millisecond
-    ull previous_time_micro; // microsecond
+    ull current_state_start_time;
     BluetoothTransmitter bluetooth_transmitter;
     bool idle_signal_sent = false;
-    double previous_error;
 
 public:
     void init()
@@ -310,12 +308,9 @@ public:
         // RFID
         rfid_sensor.init(SS_PIN, RST_PIN);
         idle_signal_sent = false;
-
     }
     void update()
     {
-        ull current_time = millis(); // millisecond
-        ++system_loop_counter;
         // RFID & bluetooth send
         RFIDSensor::DetectionResult rfid_res = rfid_sensor.detect();
         if (rfid_res.detected)
@@ -332,12 +327,12 @@ public:
             if (!idle_signal_sent)
                 bluetooth_transmitter.sendCarIsNowIdle(), idle_signal_sent = true;
             if (bluetooth_transmitter.checkRemoteCommandStreamInput(state_queue))
-                idle_signal_sent = false, current_state_start_time = current_time;
+                idle_signal_sent = false, current_state_start_time = millis();
             return;
         }
         // state transistions
         State current_state = state_queue.front();
-        bool timeUp = current_time - current_state_start_time >= current_state.duration;
+        bool timeUp = millis() - current_state_start_time >= current_state.duration;
         bool endMet = false;
         
         switch (current_state.state) {
@@ -359,7 +354,7 @@ public:
         }
         if (timeUp && endMet) {
             state_queue.pop();
-            current_state_start_time = current_time;
+            current_state_start_time = millis();
         }
         if (current_state.state == State::PossibleState::FORWARD) {
             double baseSpeed = forward_speed;
@@ -370,17 +365,9 @@ public:
                 sum += ir_result[i];
                 weight_sum += ir_weight[i] * ir_result[i];
             }
-            double current_time_micro = micros();
-            double dt = (current_time_micro - previous_time_micro) / 1000000;
-            previous_time_micro = current_time_micro;
-            double error = sum ? baseSpeed * weight_sum / sum : 0;
-            double correction = propotional_gain * error;
-            if (current_time != current_state_start_time) {
-                correction += differential_gain * (error - previous_error) / dt;
-            }
-            previous_error = error;
+            double correction = sum ? propotional_gain * baseSpeed * weight_sum / sum : 0;
             // correction = constrain(correction, -55.0, 55.0);
-            
+
             left_motor.setSpeed(baseSpeed + correction);
             right_motor.setSpeed((baseSpeed - correction) * motor_speed_bias);
             return;
