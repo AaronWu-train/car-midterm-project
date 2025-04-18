@@ -24,11 +24,10 @@ def build_graph(
             nxt = row[j]
             if nxt == -1:
                 continue
-            base_dist = row[j + 4] * DelayTime.FORWARD
             for frm in Direction:
                 to   = Direction(j - 1)
                 turn = get_turn_direction(frm, to)
-                w = base_dist
+                w = DelayTime.FORWARD
                 if turn == Turn.BACKWARD:
                     w += DelayTime.BACKWARD
                 elif turn == Turn.LEFT:

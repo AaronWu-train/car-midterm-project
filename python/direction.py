@@ -4,7 +4,7 @@ from typing import List, Tuple
 INF = 10**9 + 7
 
 class DelayTime(float, Enum):
-    FORWARD = 1 / 3
+    FORWARD = 1
     BACKWARD = 2
     LEFT = 1
     RIGHT = 1
