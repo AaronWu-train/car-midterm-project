@@ -22,7 +22,7 @@ int forward_speed = 200;
 int turn_speed = 100;
 double turn_speed_ratio = 0; // fast wheel speed divided by slow wheel speed
 // tracking
-double propotional_gain = 0.03;
+double propotional_gain = 0.015, differential_gain = 0.005;
 double ir_weight[7] = {-10.0, -7.0, -5.0, 0.0, 5.0, 7.0, 10.0};
 // state extra end function
 bool forwardExtraEndCondition(int ir_result[7], int left_speed, int right_speed) {
@@ -35,7 +35,7 @@ bool turnRightExtraEndCondition(int ir_result[7], int left_speed, int right_spee
     return ir_result[3] && abs(left_speed) < 70 && abs(right_speed) < 70; //ir_result[3] || ir_result[4] || ir_result[5] || ir_result[6];
 }
 bool turnBackExtraEndCondition(int ir_result[7], int left_speed, int right_speed) {
-    return ir_result[3] && abs(left_speed) < 70 && abs(right_speed) < 70;
+    return (ir_result[2] || ir_result[3]) && abs(left_speed) < 70 && abs(right_speed) < 70;
 }
 bool stopExtraEndCondition(int ir_result[7], int left_speed, int right_speed) {
     return !left_speed && !right_speed;
