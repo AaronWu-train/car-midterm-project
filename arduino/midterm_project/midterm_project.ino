@@ -291,6 +291,7 @@ private:
     BluetoothTransmitter bluetooth_transmitter;
     bool idle_signal_sent = false;
     double previous_error;
+
 public:
     void init()
     {
@@ -334,35 +335,40 @@ public:
         State current_state = state_queue.front();
         bool timeUp = millis() - current_state_start_time >= current_state.duration;
         bool endMet = false;
-        
-        switch (current_state.state) {
-            case State::PossibleState::FORWARD:
-                endMet = forwardExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
-                break;
-            case State::PossibleState::TURN_LEFT:
-                endMet = turnLeftExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
-                break;
-            case State::PossibleState::TURN_RIGHT:
-                endMet = turnRightExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
-                break;
-            case State::PossibleState::TURN_BACK:
-                endMet = turnBackExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
-                break;
-            case State::PossibleState::STOP:
-                endMet = stopExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
-                break;
+
+        switch (current_state.state)
+        {
+        case State::PossibleState::FORWARD:
+            endMet = forwardExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
+            break;
+        case State::PossibleState::TURN_LEFT:
+            endMet = turnLeftExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
+            break;
+        case State::PossibleState::TURN_RIGHT:
+            endMet = turnRightExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
+            break;
+        case State::PossibleState::TURN_BACK:
+            endMet = turnBackExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
+            break;
+        case State::PossibleState::STOP:
+            endMet = stopExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
+            break;
         }
-        if (timeUp && endMet) {
+        if (timeUp && endMet)
+        {
             state_queue.pop();
             current_state_start_time = millis();
             previous_error = 0;
         }
-        if (current_state.state == State::PossibleState::FORWARD) {
+        if (current_state.state == State::PossibleState::FORWARD)
+        {
             double baseSpeed = forward_speed;
-            if (timeUp) baseSpeed *= 0.7;
+            if (timeUp)
+                baseSpeed *= 0.7;
             int sum = 0;
             double weight_sum = 0;
-            for (int i = 0; i < 7; ++i) {
+            for (int i = 0; i < 7; ++i)
+            {
                 sum += ir_result[i];
                 weight_sum += ir_weight[i] * ir_result[i];
             }
@@ -374,68 +380,86 @@ public:
             left_motor.setSpeed(baseSpeed + correction);
             right_motor.setSpeed((baseSpeed - correction) * motor_speed_bias);
             return;
-        } else if (current_state.state == State::PossibleState::TURN_LEFT) {
+        }
+        else if (current_state.state == State::PossibleState::TURN_LEFT)
+        {
             double baseSpeed = turn_speed;
-            if (timeUp) baseSpeed *= 0.7;
+            if (timeUp)
+                baseSpeed *= 0.5;
             int sum = 0;
             double weight_sum = 0;
-            for (int i = 0; i < 7; ++i) {
+            for (int i = 0; i < 7; ++i)
+            {
                 sum += ir_result[i];
                 weight_sum += ir_weight[i] * ir_result[i];
             }
             if (timeUp && sum)
             {
                 double corrected_speed = sum ? baseSpeed * weight_sum / sum / 10 : 0;
-                if (0 <= corrected_speed < 55) corrected_speed = 55;
-                if (-55 < corrected_speed < 0) corrected_speed = -55;
+                if (0 <= corrected_speed < 55)
+                    corrected_speed = 55;
+                if (-55 < corrected_speed < 0)
+                    corrected_speed = -55;
                 left_motor.setSpeed(turn_speed_ratio * corrected_speed);
                 right_motor.setSpeed(corrected_speed * motor_speed_bias);
             }
-            else 
+            else
             {
                 left_motor.setSpeed(turn_speed_ratio * baseSpeed);
                 right_motor.setSpeed(baseSpeed * motor_speed_bias);
             }
-        } else if (current_state.state == State::PossibleState::TURN_RIGHT) {
+        }
+        else if (current_state.state == State::PossibleState::TURN_RIGHT)
+        {
             double baseSpeed = turn_speed;
-            if (timeUp) baseSpeed *= 0.7;
+            if (timeUp)
+                baseSpeed *= 0.5;
             int sum = 0;
             double weight_sum = 0;
-            for (int i = 0; i < 7; ++i) {
+            for (int i = 0; i < 7; ++i)
+            {
                 sum += ir_result[i];
                 weight_sum += ir_weight[i] * ir_result[i];
             }
             if (timeUp && sum)
             {
-                double corrected_speed = sum ? baseSpeed * weight_sum / sum / 10: 0;
-                if (0 <= corrected_speed < 55) corrected_speed = 55;
-                if (-55 < corrected_speed < 0) corrected_speed = -55;
+                double corrected_speed = sum ? baseSpeed * weight_sum / sum / 10 : 0;
+                if (0 <= corrected_speed < 55)
+                    corrected_speed = 55;
+                if (-55 < corrected_speed < 0)
+                    corrected_speed = -55;
                 left_motor.setSpeed(corrected_speed);
                 right_motor.setSpeed(corrected_speed * motor_speed_bias * turn_speed_ratio);
             }
-            else 
+            else
             {
                 left_motor.setSpeed(baseSpeed);
                 right_motor.setSpeed(baseSpeed * motor_speed_bias * turn_speed_ratio);
             }
-        } else if (current_state.state == State::PossibleState::TURN_BACK) {
+        }
+        else if (current_state.state == State::PossibleState::TURN_BACK)
+        {
             double baseSpeed = turn_speed;
-            if (timeUp) baseSpeed *= 0.5;
+            if (timeUp)
+                baseSpeed *= 0.4;
             int sum = 0;
             double weight_sum = 0;
-            for (int i = 0; i < 7; ++i) {
+            for (int i = 0; i < 7; ++i)
+            {
                 sum += ir_result[i];
                 weight_sum += ir_weight[i] * ir_result[i];
             }
             if (timeUp && sum)
             {
-                double corrected_speed = sum ? baseSpeed * weight_sum / sum / 10: 0;
-                if (0 <= corrected_speed < 40) corrected_speed = 40;
-                if (-40 < corrected_speed < 0) corrected_speed = -40;
+                double corrected_speed = sum ? baseSpeed * weight_sum / sum / 10 : 0;
+                if (0 <= corrected_speed < 40)
+                    corrected_speed = 40;
+                if (-40 < corrected_speed < 0)
+                    corrected_speed = -40;
                 left_motor.setSpeed(-corrected_speed);
                 right_motor.setSpeed(corrected_speed * motor_speed_bias);
             }
-            else 
+            else
             {
                 left_motor.setSpeed(-baseSpeed);
                 right_motor.setSpeed(baseSpeed * motor_speed_bias);

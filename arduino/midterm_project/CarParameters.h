@@ -11,15 +11,15 @@ const int RST_PIN = 6, SS_PIN = 53; // RFID
 ull forward_forward_duration = 400;
 ull turn_left_forward_duration = 250;
 ull turn_right_forward_duration = 250;
-ull turn_back_forward_duration = 100;
-ull turn_left_duration = 300;
-ull turn_right_duration = 350;
-ull turn_back_duration = 400;
+ull turn_back_forward_duration = 200;
+ull turn_left_duration = 250;
+ull turn_right_duration = 250;
+ull turn_back_duration = 300;
 // motor
 double motor_speed_bias = 1 / 1.07; // right motor speed divided by left motor speed
 int motor_speed_maximum_difference = 100;
 int forward_speed = 200;
-int turn_speed = 100;
+int turn_speed = 150;
 double turn_speed_ratio = 0; // fast wheel speed divided by slow wheel speed
 // tracking
 double propotional_gain = 0.015, differential_gain = 0.015;;

@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 # Default information
 TEAM_NAME = "YOUR_TEAM_NAME"
-SERVER_URL = "http://140.112.175.18:5000/"
+SERVER_URL = "https://scoreboard.ntuee.org/"
 BT_PORT = "COM4"
 # MAZE_FILE = "data/big_maze_113.csv"
 # HEIGHT = 6
