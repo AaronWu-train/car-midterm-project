@@ -128,7 +128,7 @@ public:
             {
                 if (previous_command_byte == 0b001 || previous_command_byte == 0b000)
                 {
-                    // state_queue.push(State(State::PossibleState::FORWARD, forward_forward_duration));
+                    state_queue.push(State(State::PossibleState::FORWARD, forward_forward_duration));
                     Serial.println("forward");
                 }
                 else if (previous_command_byte == 0b010)
@@ -145,7 +145,7 @@ public:
                 }
                 else if (previous_command_byte == 0b100)
                 {
-                    // state_queue.push(State(State::PossibleState::STOP, 0));
+                    state_queue.push(State(State::PossibleState::STOP, 0));
                     state_queue.push(State(State::PossibleState::FORWARD, turn_back_forward_duration));
                     Serial.println("forward(after back)");
                 }
@@ -164,7 +164,7 @@ public:
             }
             else if (command_type == 0b100)
             {
-                // state_queue.push(State(State::PossibleState::STOP, 0));
+                state_queue.push(State(State::PossibleState::STOP, 0));
                 state_queue.push(State(State::PossibleState::TURN_BACK, turn_back_duration));
                 Serial.println("turn back");
             }
