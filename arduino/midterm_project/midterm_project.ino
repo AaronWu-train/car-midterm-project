@@ -128,43 +128,43 @@ public:
             {
                 if (previous_command_byte == 0b001 || previous_command_byte == 0b000)
                 {
-                    state_queue.push(State(State::PossibleState::FORWARD, forward_forward_duration));
+                    // state_queue.push(State(State::PossibleState::FORWARD, forward_forward_duration));
                     Serial.println("forward");
                 }
                 else if (previous_command_byte == 0b010)
                 {
-                    state_queue.push(State(State::PossibleState::STOP, 0));
+                    // state_queue.push(State(State::PossibleState::STOP, 0));
                     state_queue.push(State(State::PossibleState::FORWARD, turn_left_forward_duration));
                     Serial.println("forward(after left)");
                 }
                 else if (previous_command_byte == 0b011)
                 {
-                    state_queue.push(State(State::PossibleState::STOP, 0));
+                    // state_queue.push(State(State::PossibleState::STOP, 0));
                     state_queue.push(State(State::PossibleState::FORWARD, turn_right_forward_duration));
                     Serial.println("forward(after right)");
                 }
                 else if (previous_command_byte == 0b100)
                 {
-                    state_queue.push(State(State::PossibleState::STOP, 0));
+                    // state_queue.push(State(State::PossibleState::STOP, 0));
                     state_queue.push(State(State::PossibleState::FORWARD, turn_back_forward_duration));
                     Serial.println("forward(after back)");
                 }
             }
             else if (command_type == 0b010)
             {
-                state_queue.push(State(State::PossibleState::STOP, 0));
+                // state_queue.push(State(State::PossibleState::STOP, 0));
                 state_queue.push(State(State::PossibleState::TURN_LEFT, turn_left_duration));
                 Serial.println("turn left");
             }
             else if (command_type == 0b011)
             {
-                state_queue.push(State(State::PossibleState::STOP, 0));
+                // state_queue.push(State(State::PossibleState::STOP, 0));
                 state_queue.push(State(State::PossibleState::TURN_RIGHT, turn_right_duration));
                 Serial.println("turn right");
             }
             else if (command_type == 0b100)
             {
-                state_queue.push(State(State::PossibleState::STOP, 0));
+                // state_queue.push(State(State::PossibleState::STOP, 0));
                 state_queue.push(State(State::PossibleState::TURN_BACK, turn_back_duration));
                 Serial.println("turn back");
             }

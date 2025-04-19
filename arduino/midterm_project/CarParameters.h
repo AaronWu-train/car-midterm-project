@@ -8,13 +8,13 @@ const int PWMB = 7, BIN1 = 12, BIN2 = 13; // Left motor
 const int LEFT3 = A14, LEFT2 = A8, LEFT1 = A9, MIDDLE = A10, RIGHT1 = A11, RIGHT2 = A12, RIGHT3 = A13; // IR modules
 const int RST_PIN = 6, SS_PIN = 53; // RFID
 // timing of movements
-ull forward_forward_duration = 580;
-ull turn_left_forward_duration = 350;
-ull turn_right_forward_duration = 350;
-ull turn_back_forward_duration = 200;
-ull turn_left_duration = 400;
-ull turn_right_duration = 450;
-ull turn_back_duration = 500;
+ull forward_forward_duration = 400;
+ull turn_left_forward_duration = 250;
+ull turn_right_forward_duration = 250;
+ull turn_back_forward_duration = 100;
+ull turn_left_duration = 300;
+ull turn_right_duration = 350;
+ull turn_back_duration = 400;
 // motor
 double motor_speed_bias = 1 / 1.07; // right motor speed divided by left motor speed
 int motor_speed_maximum_difference = 100;
