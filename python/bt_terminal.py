@@ -59,11 +59,12 @@ class BluetoothRemoteController:
         self.cmd_stream.append(32)
     
     def back(self):
-        self.cmd_stream.append(128)
-        self.cmd_stream.append(32)
+        # self.cmd_stream.append(0)
+        self.cmd_stream.append(160)
     
     def stop(self):
-        self.cmd_stream.append(0)
+        self.cmd_stream.append(128)
+        # self.cmd_stream.append(0)
 
     def readStat(self, scoreboard) -> str:
         if self.waiting():

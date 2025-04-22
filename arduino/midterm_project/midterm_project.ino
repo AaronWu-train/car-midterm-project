@@ -85,7 +85,8 @@ struct State
         TURN_LEFT = 1,
         TURN_RIGHT = 2,
         TURN_BACK = 3,
-        STOP = 4
+        STOP = 4,
+        TURN_BACK_AFTER_FORWARD = 5
     } state;
     ull duration;
     State(int state, ull duration) : state(state), duration(duration) {}
@@ -126,7 +127,7 @@ public:
             // int duration = duration_magnifier * (command_byte & duration_bitmask);
             if (command_type == 0b001)
             {
-                if (previous_command_byte == 0b001 || previous_command_byte == 0b000)
+                if (previous_command_byte == 0b001 || previous_command_byte == 0b000 || previous_command_byte == 0b101)
                 {
                     state_queue.push(State(State::PossibleState::FORWARD, forward_forward_duration));
                     Serial.println("forward");
@@ -145,7 +146,7 @@ public:
                 }
                 else if (previous_command_byte == 0b100)
                 {
-                    state_queue.push(State(State::PossibleState::STOP, 0));
+                    // state_queue.push(State(State::PossibleState::STOP, 0));
                     state_queue.push(State(State::PossibleState::FORWARD, turn_back_forward_duration));
                     Serial.println("forward(after back)");
                 }
@@ -167,6 +168,11 @@ public:
                 state_queue.push(State(State::PossibleState::STOP, 0));
                 state_queue.push(State(State::PossibleState::TURN_BACK, turn_back_duration));
                 Serial.println("turn back");
+            }
+            else if (command_type == 0b101)
+            {
+                state_queue.push(State(State::PossibleState::TURN_BACK_AFTER_FORWARD, turn_back_forward_duration));
+                Serial.println("forward after turn back");
             }
             previous_command_byte = command_type;
         } while (command_byte);
@@ -333,12 +339,15 @@ public:
         }
         // state transistions
         State current_state = state_queue.front();
-        bool timeUp = millis() - current_state_start_time >= current_state.duration;
+        bool timeUp = ((millis() - current_state_start_time) >= current_state.duration);
         bool endMet = false;
 
         switch (current_state.state)
         {
         case State::PossibleState::FORWARD:
+            endMet = forwardExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
+            break;
+        case State::PossibleState::TURN_BACK_AFTER_FORWARD:
             endMet = forwardExtraEndCondition(ir_result, left_motor.now_speed, right_motor.now_speed);
             break;
         case State::PossibleState::TURN_LEFT:
@@ -360,7 +369,7 @@ public:
             current_state_start_time = millis();
             previous_error = 0;
         }
-        if (current_state.state == State::PossibleState::FORWARD)
+        if (current_state.state == State::PossibleState::FORWARD || current_state.state == State::PossibleState::TURN_BACK_AFTER_FORWARD)
         {
             double baseSpeed = forward_speed;
             if (timeUp)
