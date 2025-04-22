@@ -23,15 +23,21 @@ log = logging.getLogger(__name__)
 TEAM_NAME = "YOUR_TEAM_NAME"
 SERVER_URL = "https://scoreboard.ntuee.org/"
 BT_PORT = "COM4"
-# MAZE_FILE = "data/big_maze_113.csv"
-# HEIGHT = 6
-# START_NODE = 24
+
+MAZE_FILE = "data/big_maze_113.csv"
+HEIGHT = 6
+START_NODE = 24
+START_PORT=int(Direction.SOUTH)
+
+# MAZE_FILE = "data/medium_maze.csv"
+# HEIGHT = 3
+# START_NODE = 1
 # START_PORT=int(Direction.SOUTH)
 
-MAZE_FILE = "data/medium_maze.csv"
-HEIGHT = 3
-START_NODE = 1
-START_PORT=int(Direction.SOUTH)
+# MAZE_FILE = "data/maze_cross.csv"
+# HEIGHT = 3
+# START_NODE = 6
+# START_PORT=int(Direction.SOUTH)
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -110,8 +116,8 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
                     uidlist.append("00000000")
                 current_score, time_remaining = point.add_UID(uidlist[-1])
                 print(f"Current score: {current_score}, time remaining: {time_remaining}")
-                # best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, visited_treasures)
-                best_score, tsp_path = tsp.solve(time_remaining, current_treasure, visited_treasures)
+                best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, visited_treasures)
+                # best_score, tsp_path = tsp.solve(time_remaining, current_treasure, visited_treasures)
 
                 if len(tsp_path) <= 1:
                     print("No more treasures to visit.")
