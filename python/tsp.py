@@ -90,7 +90,7 @@ class TSP:
             for v in range(n):
                 if dp[mask][v] <= T:
                     added_score = self.score_sum[mask] - self.score_sum[previsited]
-                    if added_score > max_score:
+                    if added_score > max_score or (added_score == max_score and dp[mask][v] <= dp[next_mask][best_last] ):
                         max_score = added_score
                         best_mask = mask
                         best_last = v
@@ -110,6 +110,7 @@ class TSP:
                 break
             mask, v = prev
         path.reverse()
+        print("Need Time", dp[best_mask][best_last])
         return max_score, path
 
 # 測試範例
