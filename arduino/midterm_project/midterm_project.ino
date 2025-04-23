@@ -146,7 +146,7 @@ public:
                 }
                 else if (previous_command_byte == 0b100)
                 {
-                    // state_queue.push(State(State::PossibleState::STOP, 0));
+                    state_queue.push(State(State::PossibleState::STOP, 0));
                     state_queue.push(State(State::PossibleState::FORWARD, turn_back_forward_duration));
                     Serial.println("forward(after back)");
                 }
@@ -336,6 +336,12 @@ public:
             if (bluetooth_transmitter.checkRemoteCommandStreamInput(state_queue))
                 idle_signal_sent = false, current_state_start_time = millis();
             return;
+        }
+        if (state_queue.size() == 2) {
+            if (!idle_signal_sent)
+                bluetooth_transmitter.sendCarIsNowIdle(), idle_signal_sent = true;
+            if (bluetooth_transmitter.checkRemoteCommandStreamInput(state_queue))
+                idle_signal_sent = false, current_state_start_time = millis();
         }
         // state transistions
         State current_state = state_queue.front();

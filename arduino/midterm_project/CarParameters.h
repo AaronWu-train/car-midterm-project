@@ -9,12 +9,12 @@ const int LEFT3 = A14, LEFT2 = A8, LEFT1 = A9, MIDDLE = A10, RIGHT1 = A11, RIGHT
 const int RST_PIN = 6, SS_PIN = 53; // RFID
 // timing of movements
 ull forward_forward_duration = 600;
-ull turn_left_forward_duration = 250;
-ull turn_right_forward_duration = 250;
+ull turn_left_forward_duration = 350;
+ull turn_right_forward_duration = 350;
 ull turn_back_forward_duration = 300;
 ull turn_left_duration = 210;
 ull turn_right_duration = 250;
-ull turn_back_duration = 200;
+ull turn_back_duration = 280;
 // motor
 double motor_speed_bias = 1 / 1.07; // right motor speed divided by left motor speed
 int motor_speed_maximum_difference = 100;
@@ -29,13 +29,13 @@ bool forwardExtraEndCondition(int ir_result[7], int left_speed, int right_speed)
     return (ir_result[2] && ir_result[3] && ir_result[4] && (ir_result[1] || ir_result[5]));
 }
 bool turnLeftExtraEndCondition(int ir_result[7], int left_speed, int right_speed) {
-    return ir_result[3] && abs(left_speed) < 70 && abs(right_speed) < 70; //ir_result[0] || ir_result[1] || ir_result[2] || ir_result[3];
+    return (ir_result[2] || ir_result[3]) && abs(left_speed) < 70 && abs(right_speed) < 70; //ir_result[0] || ir_result[1] || ir_result[2] || ir_result[3];
 }
 bool turnRightExtraEndCondition(int ir_result[7], int left_speed, int right_speed) {
-    return ir_result[3] && abs(left_speed) < 70 && abs(right_speed) < 70; //ir_result[3] || ir_result[4] || ir_result[5] || ir_result[6];
+    return (ir_result[4] || ir_result[3]) && abs(left_speed) < 70 && abs(right_speed) < 70; //ir_result[3] || ir_result[4] || ir_result[5] || ir_result[6];
 }
 bool turnBackExtraEndCondition(int ir_result[7], int left_speed, int right_speed) {
-    return  !ir_result[1] && (ir_result[2] || ir_result[3]) && !ir_result[4] && abs(left_speed) < 50 && abs(right_speed) < 50;
+    return  !ir_result[0] && (ir_result[1] || ir_result[2] || ir_result[3]) && !ir_result[4] && abs(left_speed) < 50 && abs(right_speed) < 50;
 }
 bool stopExtraEndCondition(int ir_result[7], int left_speed, int right_speed) {
     return !left_speed && !right_speed;
