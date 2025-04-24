@@ -80,7 +80,7 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
 
         # Get tsp path
         current_time = time.perf_counter() - start_time
-        best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, visited_treasures)
+        best_score, tsp_path = tsp.solve(73 - current_time, current_treasure, visited_treasures)
         print("TSP path:")
         print([maze.treasure_nodes[nd] for nd in tsp_path])
 
@@ -116,7 +116,7 @@ def main(mode: int, bt_port: str, team_name: str, server_url: str, maze_file: st
                     uidlist.append("00000000")
                 current_score, time_remaining = point.add_UID(uidlist[-1])
                 print(f"Current score: {current_score}, time remaining: {time_remaining}")
-                best_score, tsp_path = tsp.solve(70 - current_time, current_treasure, visited_treasures)
+                best_score, tsp_path = tsp.solve(73 - current_time, current_treasure, visited_treasures)
                 # best_score, tsp_path = tsp.solve(time_remaining, current_treasure, visited_treasures)
 
                 if len(tsp_path) <= 1:
