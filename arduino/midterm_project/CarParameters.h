@@ -14,7 +14,7 @@ ull turn_right_forward_duration = 350;
 ull turn_back_forward_duration = 300;
 ull turn_left_duration = 210;
 ull turn_right_duration = 250;
-ull turn_back_duration = 280;
+ull turn_back_duration = 200;
 // motor
 double motor_speed_bias = 1 / 1.07; // right motor speed divided by left motor speed
 int motor_speed_maximum_difference = 100;
